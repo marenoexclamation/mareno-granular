@@ -1,0 +1,8230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+>
+
+<title>gao glai gaeng norasing</title>
+<!-- v3: billiard/curling momentum -->
+
+<style>
+
+/* =========================================================
+   BASIC
+========================================================= */
+
+html,
+body {
+
+  margin: 0;
+  padding: 0;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: hidden;
+
+  background: #ffffff;
+  color: #111111;
+
+  font-family:
+    "MS PGothic",
+    "MS Gothic",
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  font-size: 12px;
+
+  overscroll-behavior: none;
+
+}
+
+
+/* =========================================================
+   CANVAS
+========================================================= */
+
+#canvas {
+
+  position: fixed;
+  inset: 0;
+
+  width: 100vw;
+  height: 100vh;
+
+  z-index: 1;
+
+  touch-action: none;
+
+  cursor: crosshair;
+
+}
+
+
+/* =========================================================
+   BALL
+========================================================= */
+
+.ball {
+
+  position: fixed;
+
+  width: 64px;
+  height: 64px;
+
+  border-radius: 50%;
+
+  z-index: 50;
+
+  cursor: pointer;
+
+  user-select: none;
+
+  background:
+    radial-gradient(
+      circle at 32% 27%,
+      #ffffff 0%,
+      #eeeeee 12%,
+      #bdbdbd 34%,
+      #666666 62%,
+      #222222 82%,
+      #000000 100%
+    );
+
+  box-shadow:
+    inset -10px -12px 18px rgba(0,0,0,0.55),
+    inset 8px 8px 15px rgba(255,255,255,0.28),
+    0 8px 18px rgba(0,0,0,0.25);
+
+  will-change:
+    transform,
+    width,
+    height,
+    box-shadow;
+
+}
+
+.ballGrabTarget {
+  position: absolute;
+  inset: -22px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.001);
+  pointer-events: none;
+}
+
+.ball.grabHitArea .ballGrabTarget {
+  pointer-events: auto;
+}
+
+
+
+/* =========================================================
+   FIXED INFO
+========================================================= */
+
+#fileTitle {
+
+  position: fixed;
+
+  top: 15px;
+  left: 15px;
+
+  z-index: 100;
+
+}
+
+
+#hint {
+
+  position: fixed;
+
+  top: 15px;
+  right: 15px;
+
+  z-index: 100;
+
+  text-align: right;
+
+  pointer-events: none;
+
+}
+
+
+#info {
+
+  position: fixed;
+
+  left: 15px;
+  bottom: 15px;
+
+  z-index: 100;
+
+  pointer-events: none;
+
+}
+
+
+#recording {
+
+  display: none;
+
+  position: fixed;
+
+  top: 15px;
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  z-index: 200;
+
+}
+
+
+/* =========================================================
+   menu
+========================================================= */
+
+#controls {
+
+  position: fixed;
+
+  right: 15px;
+  bottom: 15px;
+
+  z-index: 300;
+
+  width: 220px;
+  height: 620px;
+  min-width: 220px;
+  min-height: 260px;
+  max-width: min(440px, 100vw);
+  max-height: 100vh;
+
+  box-sizing: border-box;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+
+  padding: 30px 8px 8px 8px;
+
+}
+
+
+#controls.closed {
+
+  display: none;
+
+}
+
+
+#menuHeader {
+
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 24px;
+
+  box-sizing: border-box;
+  padding: 2px 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background: transparent;
+  border: none;
+  cursor: default;
+
+}
+
+
+#menuDragArea {
+  flex: 1;
+  height: 100%;
+}
+
+#menuWindowButtons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#closeMenu {
+  width: 16px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  line-height: 14px;
+  text-align: center;
+  font-size: 13px;
+  background: transparent;
+  border: none;
+  text-decoration: none;
+}
+
+
+#openMenu {
+
+  display: none;
+  position: fixed;
+  right: 15px;
+  bottom: 15px;
+  z-index: 300;
+
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin: 0;
+
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  line-height: 18px;
+
+}
+
+
+
+#controls::-webkit-scrollbar {
+  width: 4px;
+}
+
+#controls::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#controls::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.22);
+}
+
+
+/* four-side menu resize handles */
+.menuResizeHandle {
+  position: absolute;
+  z-index: 20;
+  background: transparent;
+}
+
+.menuResizeHandle.left {
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 7px;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='19' height='19' viewBox='0 0 19 19'%3E%3Cpath d='M2 9.5h15M2 9.5l3-3M2 9.5l3 3M17 9.5l-3-3M17 9.5l-3 3' stroke='%23111' stroke-width='1' fill='none'/%3E%3C/svg%3E") 9 9, ew-resize;
+}
+
+.menuResizeHandle.right {
+  right: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 7px;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='19' height='19' viewBox='0 0 19 19'%3E%3Cpath d='M2 9.5h15M2 9.5l3-3M2 9.5l3 3M17 9.5l-3-3M17 9.5l-3 3' stroke='%23111' stroke-width='1' fill='none'/%3E%3C/svg%3E") 9 9, ew-resize;
+}
+
+.menuResizeHandle.top {
+  left: 8px;
+  right: 8px;
+  top: 0;
+  height: 7px;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='19' height='19' viewBox='0 0 19 19'%3E%3Cpath d='M9.5 2v15M9.5 2l-3 3M9.5 2l3 3M9.5 17l-3-3M9.5 17l3-3' stroke='%23111' stroke-width='1' fill='none'/%3E%3C/svg%3E") 9 9, ns-resize;
+}
+
+.menuResizeHandle.bottom {
+  left: 8px;
+  right: 8px;
+  bottom: 0;
+  height: 7px;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='19' height='19' viewBox='0 0 19 19'%3E%3Cpath d='M9.5 2v15M9.5 2l-3 3M9.5 2l3 3M9.5 17l-3-3M9.5 17l3-3' stroke='%23111' stroke-width='1' fill='none'/%3E%3C/svg%3E") 9 9, ns-resize;
+}
+
+/* =========================================================
+   DRAW TOOLS
+========================================================= */
+
+#drawingTools {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  margin-bottom: 9px;
+
+}
+
+
+.toolButton {
+
+  width: 34px;
+  height: 31px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  margin: 0;
+
+  border: none;
+
+  background: transparent;
+
+  font-size: 20px;
+
+}
+
+
+.toolButton {
+  opacity: 0.62;
+}
+
+.toolButton.active {
+  background: transparent;
+  opacity: 1;
+  border-bottom: 1px solid #111111;
+}
+
+
+.toolButton svg {
+
+  width: 19px;
+  height: 19px;
+
+  stroke: #111111;
+
+  stroke-width: 1.5;
+
+  fill: none;
+
+}
+
+
+
+
+.toolGroup {
+  margin-bottom: 9px;
+  padding: 6px;
+  border: none;
+  background: transparent;
+}
+
+.sharedGrabGroup {
+  padding-top: 5px;
+  padding-bottom: 6px;
+  border-top: none;
+  border-bottom: none;
+}
+
+.sharedGrabLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-bottom: 3px;
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+.sharedGrabArrow {
+  font-size: 11px;
+}
+
+.sharedGrabRow {
+  justify-content: center;
+}
+
+.sharedGrabButton {
+  width: 36px;
+}
+
+.toolGroupTitle {
+  margin-bottom: 5px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.ballTitleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.ballTitleRow .toolGroupTitle {
+  margin-bottom: 0;
+}
+
+.ballTitleRow #modeControls {
+  margin: 0;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.ballTitleRow .modeButton {
+  flex: none;
+  padding: 0;
+  font-size: 10px;
+}
+
+.toolRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+#confirmOverlay {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  white-space: nowrap;
+  pointer-events: auto;
+}
+
+#confirmBox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  text-align: left;
+}
+
+#confirmMessage {
+  margin: 0;
+  font-size: 10px;
+}
+
+#confirmButtons {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.confirmButton {
+  padding: 1px 5px;
+  margin: 0;
+  border: 1px solid #111111;
+  background: transparent;
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+.confirmButton:hover {
+  text-decoration: none;
+  background: #111111;
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   ZOOM
+========================================================= */
+
+#zoomControls {
+
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  margin-bottom: 9px;
+
+}
+
+#zoomLabel {
+  width: 55px;
+  flex: 0 0 55px;
+  font-size: 12px;
+}
+
+#zoomGauge {
+  position: relative;
+  flex: 1;
+  height: 16px;
+}
+
+#zoomGaugeTrack {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1.5px;
+  transform: translateY(-50%);
+  background: #111111;
+  pointer-events: none;
+}
+
+#zoomGaugeThumb {
+  position: absolute;
+  top: 50%;
+  left: 9.09%;
+  width: 1.5px;
+  height: 11px;
+  transform: translate(-0.75px, -50%);
+  background: #111111;
+  pointer-events: none;
+}
+
+#zoomRange {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+#zoomPercent {
+  width: 38px;
+  font-size: 10px;
+  text-align: right;
+}
+
+/* =========================================================
+   MODE
+========================================================= */
+
+#modeControls {
+
+  display: flex;
+
+  gap: 5px;
+
+  margin-bottom: 10px;
+
+}
+
+
+.modeButton {
+
+  flex: 1;
+  padding: 3px 2px;
+  border: none;
+  background: transparent;
+  opacity: 0.62;
+
+}
+
+
+.modeButton.active {
+
+  background: transparent;
+  opacity: 1;
+  text-decoration: underline;
+
+}
+
+
+
+#movementControl {
+  margin-top: -4px;
+  margin-bottom: 8px;
+}
+
+
+/* =========================================================
+   randomize
+========================================================= */
+
+#randomizeButton {
+
+  width: 100%;
+  padding: 2px 0;
+  margin-bottom: 14px;
+  border: none;
+  background: transparent;
+  text-align: left;
+
+}
+
+
+
+.forceGroup {
+  margin-top: 2px;
+}
+
+.forceRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.forceButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 5px;
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  color: #111111;
+  cursor: pointer !important;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.forceButton svg {
+  cursor: pointer !important;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.forceButton.held {
+  background: #111111;
+  color: #ffffff;
+  border-color: #111111;
+}
+
+.forceButton.active {
+  background: #111111;
+  color: #ffffff;
+  border-color: #111111;
+  opacity: 1;
+}
+
+.forceButton:hover {
+  text-decoration: underline;
+  cursor: pointer !important;
+}
+
+/* =========================================================
+   SECTIONS
+========================================================= */
+
+.section {
+
+  margin-bottom: 14px;
+
+}
+
+
+.sectionTitle {
+
+  font-weight: bold;
+
+  margin-bottom: 5px;
+
+}
+
+
+.event {
+
+  margin-bottom: 10px;
+
+  padding-bottom: 8px;
+
+  border-bottom: none;
+
+}
+
+
+.eventName {
+
+  margin-bottom: 4px;
+
+}
+
+.eventName {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.eventIcon {
+  width: 24px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.eventIcon svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: #111111;
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.eventLabel {
+  font-size: 10px;
+}
+
+
+.fileInput {
+  position: absolute;
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.filePicker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.filePickerButton {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 10px;
+  text-decoration: underline;
+}
+
+.filePickerName {
+  flex: 1;
+  min-width: 0;
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+.control {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 5px;
+
+  margin: 3px 0;
+
+}
+
+
+.control span:first-child {
+  width: 60px;
+  flex: 0 0 60px;
+}
+
+.control .value {
+  width: 42px !important;
+  flex: 0 0 42px;
+}
+
+.control input[type="range"] {
+
+  flex: 1 1 auto;
+  min-width: 34px;
+  width: auto;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 14px;
+  background: transparent;
+  outline: none;
+
+}
+
+.control input[type="range"]::-webkit-slider-runnable-track {
+  height: 1.5px;
+  background: #111111;
+  border: none;
+}
+
+.control input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.5px;
+  height: 11px;
+  background: #111111;
+  margin-top: -4.75px;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.control input[type="range"]::-moz-range-track {
+  height: 1.5px;
+  background: #111111;
+  border: none;
+}
+
+.control input[type="range"]::-moz-range-progress {
+  height: 1.5px;
+  background: #111111;
+  border: none;
+}
+
+.control input[type="range"]::-moz-range-thumb {
+  width: 1.5px;
+  height: 11px;
+  background: #111111;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+
+.value {
+
+  width: 38px !important;
+
+  text-align: right;
+
+  font-size: 10px;
+
+}
+
+
+#recordExport {
+  margin-top: 7px;
+}
+
+.recordMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 2px 0;
+  font-size: 10px;
+}
+
+.recordNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0;
+  font-size: 10px;
+}
+
+.recordNameRow label {
+  width: 48px;
+  flex: 0 0 auto;
+}
+
+#recordName {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-bottom: 1px solid #111111;
+  background: transparent;
+  color: #111111;
+  font: inherit;
+  font-size: 10px;
+  outline: none;
+  padding: 1px 0;
+}
+
+#recordFormat {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-bottom: 1px solid #111111;
+  background: transparent;
+  color: #111111;
+  font: inherit;
+  font-size: 10px;
+  outline: none;
+  padding: 1px 0;
+  border-radius: 0;
+}
+
+#downloadButton {
+  margin-top: 3px;
+}
+
+/* =========================================================
+   BUTTON
+========================================================= */
+
+button {
+
+  border: none;
+
+  background: transparent;
+
+  color: #111111;
+
+  padding: 0;
+
+  margin: 3px 0;
+
+  font-family: inherit;
+
+  font-size: 11px;
+
+  cursor: pointer;
+
+}
+
+
+button:hover {
+
+  text-decoration: underline;
+
+}
+
+
+
+#controls,
+#openMenu,
+#hint,
+#info,
+#recording {
+  text-transform: lowercase;
+}
+
+#fileTitle {
+  text-transform: none;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+  #controls {
+
+    width: 220px;
+    height: 560px;
+
+  }
+
+}
+
+
+
+/* v32: ball-centric controls + clearer event icons */
+.ballGroup {
+  margin-bottom: 12px;
+}
+
+.ballToolRow {
+  margin-bottom: 2px;
+}
+
+.ballActionRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.ballActionRow .forceButton {
+  width: 34px;
+  height: 31px;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  opacity: 0.62;
+}
+
+.ballActionRow .forceButton:hover,
+.ballActionRow .forceButton.active,
+.ballActionRow .forceButton.held {
+  opacity: 1;
+  text-decoration: none;
+}
+
+.ballActionRow .forceButton.active {
+  color: #111111;
+  background: transparent;
+  border-bottom: 1px solid #111111;
+}
+
+.ballActionRow .forceButton.held {
+  color: #ffffff;
+  background: #111111;
+}
+
+.ballTitleRow #modeControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ballTitleRow .modeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 10px;
+  opacity: 0.55;
+}
+
+.ballTitleRow .modeButton.active {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.modeIcon {
+  width: 24px;
+  height: 14px;
+  fill: none;
+  stroke: #111111;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.modeIcon *,
+.eventIcon svg * {
+  vector-effect: non-scaling-stroke;
+}
+
+.referenceIcon {
+  display: block;
+  object-fit: contain;
+}
+
+.referenceSvg {
+  display: block;
+  fill: none;
+  stroke: #111111;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.referenceSvg * {
+  vector-effect: non-scaling-stroke;
+}
+
+.straightReferenceIcon {
+  width: 22px;
+  height: 18px;
+  transform: scale(1.2097);
+  transform-origin: center;
+}
+
+.bounceReferenceIcon {
+  width: 32px;
+  height: 18px;
+  transform: scale(1.1976);
+  transform-origin: center;
+}
+
+.eventReferenceIcon {
+  width: 30px;
+  height: 22px;
+  transform-origin: center;
+}
+
+.ballBallReferenceIcon {
+  transform: scale(0.6774);
+}
+
+.ballLineReferenceIcon {
+  transform: scale(0.7918);
+}
+
+#freezeTool svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ballTransportRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 5px;
+}
+
+.transportButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 10px;
+  text-decoration: underline;
+}
+
+.grabGroup {
+  margin-bottom: 14px;
+}
+
+.grabTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.grabTitleRow .toolGroupTitle {
+  margin: 0;
+}
+
+.eventIconLarge {
+  width: 30px;
+  height: 22px;
+}
+
+.eventIconLarge svg {
+  stroke-width: 1.35;
+}
+
+.eventIcon .surfaceFrame {
+  stroke-linejoin: miter;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div id="fileTitle">
+  ガオグライ・ゲーンノラシン
+</div>
+
+<div id="hint">
+  move balls, draw lines. your sound plays when they hit.
+</div>
+
+<div id="info">
+  free music (2002)
+</div>
+
+<div id="recording">
+  ● rec
+</div>
+
+<button id="openMenu" title="open">□</button>
+
+
+<div id="controls">
+
+
+  <div id="menuHeader">
+
+    <span id="menuDragArea" aria-hidden="true"></span>
+
+    <div id="menuWindowButtons">
+      <button id="closeMenu" title="minimize">_</button>
+    </div>
+
+  </div>
+
+  <div class="menuResizeHandle left" data-edge="left"></div>
+  <div class="menuResizeHandle right" data-edge="right"></div>
+  <div class="menuResizeHandle top" data-edge="top"></div>
+  <div class="menuResizeHandle bottom" data-edge="bottom"></div>
+
+  <!-- TOOLS -->
+
+  <div class="toolGroup ballGroup">
+
+    <div class="ballTitleRow">
+      <div class="toolGroupTitle">ball</div>
+
+      <div id="modeControls">
+        <button id="straightMode" class="modeButton active" title="straight">
+          <svg class="referenceSvg straightReferenceIcon" viewBox="0 0 26 25" aria-hidden="true">
+            <circle cx="8" cy="17" r="5" />
+            <path d="M12 13L23 2" />
+            <path d="M18 2h5v5" />
+          </svg>
+          <span>straight</span>
+        </button>
+        <button id="bounceMode" class="modeButton" title="bounce">
+          <svg class="referenceSvg bounceReferenceIcon" viewBox="0 0 44 22" aria-hidden="true">
+            <path d="M2 20h40" />
+            <path d="M4.152 16.944C11.152 6.944 21.152 5.944 29.152 12.944" />
+            <circle cx="32.206" cy="8.996" r="5" />
+          </svg>
+          <span>bounce</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="toolRow ballToolRow">
+
+      <button id="addBallTool" class="toolButton active" title="add ball">＋</button>
+
+      <button id="removeBallTool" class="toolButton" title="remove ball">−</button>
+
+      <button id="clearBallsTool" class="toolButton" title="clear all balls">
+        <svg viewBox="0 0 24 24">
+          <path d="M5 7h14" />
+          <path d="M9 7V4h6v3" />
+          <path d="M7 7l1 13h8l1-13" />
+          <path d="M10 11v6" />
+          <path d="M14 11v6" />
+        </svg>
+      </button>
+
+    </div>
+
+    <div class="ballActionRow">
+      <button id="grabTool" class="forceButton" title="grab" aria-label="grab">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3v6M9.5 6.5L12 9l2.5-2.5" />
+          <path d="M21 12h-6M17.5 9.5L15 12l2.5 2.5" />
+          <path d="M12 21v-6M9.5 17.5L12 15l2.5 2.5" />
+          <path d="M3 12h6M6.5 9.5L9 12l-2.5 2.5" />
+        </svg>
+      </button>
+
+      <button id="repelButton" class="forceButton" title="repel" aria-label="repel">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 9V3M9.5 5.5L12 3l2.5 2.5" />
+          <path d="M15 12h6M18.5 9.5L21 12l-2.5 2.5" />
+          <path d="M12 15v6M9.5 18.5L12 21l2.5-2.5" />
+          <path d="M9 12H3M5.5 9.5L3 12l2.5 2.5" />
+        </svg>
+      </button>
+
+      <button id="gravityButton" class="forceButton" title="gravity" aria-label="gravity">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="1.8" />
+          <path d="M12 9V3M9.5 5.5L12 3l2.5 2.5" />
+          <path d="M15 12h6M18.5 9.5L21 12l-2.5 2.5" />
+          <path d="M12 15v6M9.5 18.5L12 21l2.5-2.5" />
+          <path d="M9 12H3M5.5 9.5L3 12l2.5 2.5" />
+        </svg>
+      </button>
+
+      <button id="freezeTool" class="forceButton" title="freeze" aria-label="freeze">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 2v20M3.3 7l17.4 10M20.7 7L3.3 17" />
+          <path d="M9.5 4.5L12 7l2.5-2.5M9.5 19.5L12 17l2.5 2.5" />
+          <path d="M5.2 9.8L8.6 8.9 7.7 5.5M18.8 14.2L15.4 15.1l.9 3.4" />
+          <path d="M18.8 9.8L15.4 8.9l.9-3.4M5.2 14.2L8.6 15.1l-.9 3.4" />
+        </svg>
+      </button>
+    </div>
+
+    <div id="zoomControls">
+      <span id="zoomLabel">scale</span>
+      <div id="zoomGauge">
+        <div id="zoomGaugeTrack"></div>
+        <div id="zoomGaugeThumb"></div>
+        <input id="zoomRange" type="range" min="10" max="1000" value="100" step="1">
+      </div>
+      <span id="zoomPercent">100%</span>
+    </div>
+
+    <div id="movementControl" class="control">
+      <span id="motionParameterLabel">speed</span>
+      <input id="ballVelocity" type="range" min="0" max="10" value="2" step="0.01">
+      <span id="ballVelocityValue" class="value">2.00</span>
+    </div>
+
+    <div id="frictionControl" class="control">
+      <span>friction</span>
+      <input id="frictionSlider" type="range" min="0" max="1" value="0.25" step="0.01">
+      <span id="frictionValue" class="value">0.25</span>
+    </div>
+
+    <div class="ballTransportRow">
+      <button id="stopBallsButton" class="transportButton">stop</button>
+    </div>
+
+    <input id="ballCount" type="hidden" value="0">
+
+  </div>
+
+  <div class="toolGroup pencilGroup">
+
+    <div class="toolGroupTitle">pencil</div>
+
+    <div class="toolRow">
+      <button id="penTool" class="toolButton" title="pen">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 20l4.3-1.1L19 8.2 15.8 5 5.1 15.7 4 20z" />
+          <path d="M14.8 6l3.2 3.2" />
+        </svg>
+      </button>
+
+      <button id="eraserTool" class="toolButton" title="eraser">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 15.5L11.8 7.7a2.2 2.2 0 0 1 3.1 0l5.4 5.4a2.2 2.2 0 0 1 0 3.1L16 20.5H8.8L4 15.5z" />
+          <path d="M9 20.5h11" />
+        </svg>
+      </button>
+
+      <button id="clearTool" class="toolButton" title="clear all lines">
+        <svg viewBox="0 0 24 24">
+          <path d="M5 7h14" />
+          <path d="M9 7V4h6v3" />
+          <path d="M7 7l1 13h8l1-13" />
+          <path d="M10 11v6" />
+          <path d="M14 11v6" />
+        </svg>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- =====================================================
+       EVENT AUDIO
+  ====================================================== -->
+
+  <div class="section">
+
+    <div class="sectionTitle">
+      sound
+    </div>
+
+
+    <!-- SURFACE -->
+
+    <div class="event">
+
+      <div class="eventName" title="surface / wall / floor / ceiling">
+        <span class="eventIcon eventIconLarge" aria-hidden="true">
+          <svg class="referenceSvg eventReferenceIcon" viewBox="0 0 62 44">
+            <rect x="2" y="2" width="58" height="40" />
+            <circle cx="11.5033" cy="25.9474" r="9" />
+            <path d="M4.6877 20.0067L11.2814 13.413" />
+          </svg>
+        </span>
+        <span class="eventLabel">ball * surface</span>
+      </div>
+
+      <input
+        id="surfaceFile"
+        class="fileInput"
+        type="file"
+        accept="audio/*"
+      >
+
+      <div class="control">
+
+        <span>volume</span>
+
+        <input
+          id="surfaceVolume"
+          type="range"
+          min="0"
+          max="1"
+          value="1"
+          step="0.01"
+        >
+
+        <span
+          id="surfaceVolumeValue"
+          class="value"
+        >
+          1.00
+        </span>
+
+      </div>
+
+
+      <div class="control">
+
+        <span>size</span>
+
+        <input
+          id="surfaceSize"
+          type="range"
+          min="0.01"
+          max="1"
+          value="0.08"
+          step="0.01"
+        >
+
+        <span
+          id="surfaceSizeValue"
+          class="value"
+        >
+          0.08
+        </span>
+
+      </div>
+
+
+      <div class="control">
+
+        <span>density</span>
+
+        <input
+          id="surfaceDensity"
+          type="range"
+          min="1"
+          max="40"
+          value="8"
+          step="1"
+        >
+
+        <span
+          id="surfaceDensityValue"
+          class="value"
+        >
+          8
+        </span>
+
+      </div>
+
+
+      <div class="control">
+
+        <span>speed</span>
+
+        <input
+          id="surfaceSpeed"
+          type="range"
+          min="0"
+          max="2"
+          value="0.5"
+          step="0.01"
+        >
+
+        <span
+          id="surfaceSpeedValue"
+          class="value"
+        >
+          0.50
+        </span>
+
+      </div>
+
+
+      <div class="control">
+
+        <span>pitch</span>
+
+        <input
+          id="surfacePitch"
+          type="range"
+          min="0.25"
+          max="2.5"
+          value="1"
+          step="0.01"
+        >
+
+        <span
+          id="surfacePitchValue"
+          class="value"
+        >
+          1.00
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <!-- BALL BALL -->
+
+    <div class="event">
+
+      <div class="eventName" title="ball × ball">
+        <span class="eventIcon eventIconLarge" aria-hidden="true">
+          <svg class="referenceSvg eventReferenceIcon ballBallReferenceIcon" viewBox="0 0 42 27">
+            <circle cx="12" cy="13" r="9" />
+            <circle cx="30.4331" cy="12.9616" r="9" />
+            <path d="M18.5734 6.8877L11.9796 0.2939" />
+            <path d="M23.9164 6.8032L30.5101 0.2094" />
+          </svg>
+        </span>
+        <span class="eventLabel">ball * ball</span>
+      </div>
+
+      <input
+        id="ballFile"
+        class="fileInput"
+        type="file"
+        accept="audio/*"
+      >
+
+      <div class="control">
+
+        <span>volume</span>
+
+        <input
+          id="ballVolume"
+          type="range"
+          min="0"
+          max="1"
+          value="1"
+          step="0.01"
+        >
+
+        <span
+          id="ballVolumeValue"
+          class="value"
+        >
+          1.00
+        </span>
+
+      </div>
+
+
+      <div class="control">
+
+        <span>size</span>
+
+        <input
+          id="ballSize"
+          type="range"
+          min="0.01"
+          max="1"
+          value="0.15"
+          step="0.01"
+        >
+
+        <span
+          id="ballSizeValue"
+          class="value"
+        >
+          0.15
+        </span>
+
+      </div>
+
+
+      <div class="control">
+
+        <span>density</span>
+
+        <input
+          id="ballDensity"
+          type="range"
+          min="1"
+          max="40"
+          value="12"
+          step="1"
+        >
+
+        <span
+          id="ballDensityValue"
+          class="value"
+        >
+          12
+        </span>
+
+      </div>
+
+
+      <div class="control">
+
+        <span>speed</span>
+
+        <input
+          id="ballSpeedAudio"
+          type="range"
+          min="0"
+          max="2"
+          value="0.8"
+          step="0.01"
+        >
+
+        <span
+          id="ballSpeedAudioValue"
+          class="value"
+        >
+          0.80
+        </span>
+
+      </div>
+
+
+      <div class="control">
+
+        <span>pitch</span>
+
+        <input
+          id="ballPitch"
+          type="range"
+          min="0.25"
+          max="2.5"
+          value="1"
+          step="0.01"
+        >
+
+        <span
+          id="ballPitchValue"
+          class="value"
+        >
+          1.00
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <!-- LINE -->
+
+    <div class="event">
+
+      <div class="eventName" title="line hit">
+        <span class="eventIcon eventIconLarge" aria-hidden="true">
+          <svg class="referenceSvg eventReferenceIcon ballLineReferenceIcon" viewBox="0 0 40 36">
+            <circle cx="10.5484" cy="14.299" r="9" />
+            <path d="M1.6487 34.6236L35.6487 4.6236" />
+            <path d="M19.5754 14.2811L19.5754 4.9561" />
+          </svg>
+        </span>
+        <span class="eventLabel">ball * line</span>
+      </div>
+
+      <input
+        id="lineFile"
+        class="fileInput"
+        type="file"
+        accept="audio/*"
+      >
+
+      <div class="control">
+
+        <span>volume</span>
+
+        <input
+          id="lineVolume"
+          type="range"
+          min="0"
+          max="1"
+          value="1"
+          step="0.01"
+        >
+
+        <span
+          id="lineVolumeValue"
+          class="value"
+        >
+          1.00
+        </span>
+
+      </div>
+
+
+      <div class="control">
+
+        <span>size</span>
+
+        <input
+          id="lineSize"
+          type="range"
+          min="0.01"
+          max="1"
+          value="0.10"
+          step="0.01"
+        >
+
+        <span
+          id="lineSizeValue"
+          class="value"
+        >
+          0.10
+        </span>
+
+      </div>
+
+
+      <div class="control">
+
+        <span>density</span>
+
+        <input
+          id="lineDensity"
+          type="range"
+          min="1"
+          max="40"
+          value="10"
+          step="1"
+        >
+
+        <span
+          id="lineDensityValue"
+          class="value"
+        >
+          10
+        </span>
+
+      </div>
+
+
+      <div class="control">
+
+        <span>speed</span>
+
+        <input
+          id="lineSpeed"
+          type="range"
+          min="0"
+          max="2"
+          value="0.7"
+          step="0.01"
+        >
+
+        <span
+          id="lineSpeedValue"
+          class="value"
+        >
+          0.70
+        </span>
+
+      </div>
+
+
+      <div class="control">
+
+        <span>pitch</span>
+
+        <input
+          id="linePitch"
+          type="range"
+          min="0.25"
+          max="2.5"
+          value="1"
+          step="0.01"
+        >
+
+        <span
+          id="linePitchValue"
+          class="value"
+        >
+          1.00
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <button id="randomizeButton">
+      randomize
+    </button>
+
+  </div>
+
+
+
+  <div class="section" id="recordSection">
+
+    <button id="recordButton">
+      record
+    </button>
+
+    <div id="recordExport" style="display:none;">
+
+      <div class="recordMeta">
+        <span>duration</span>
+        <span id="recordDuration">00:00</span>
+      </div>
+<div class="recordNameRow">
+        <label for="recordName">name</label>
+        <input id="recordName" type="text" value="free-music" spellcheck="false">
+      </div>
+
+      <div class="recordNameRow">
+        <label for="recordFormat">format</label>
+        <select id="recordFormat">
+          <option value="wav">wav</option>
+          <option value="mp3">mp3</option>
+        </select>
+      </div>
+
+      <button id="downloadButton">
+        download
+      </button>
+
+    </div>
+
+  </div>
+
+
+</div>
+
+
+
+<div id="confirmOverlay">
+  <div id="confirmBox">
+    <div id="confirmMessage"></div>
+    <div id="confirmButtons">
+      <button id="confirmYes" class="confirmButton">yes</button>
+      <button id="confirmNo" class="confirmButton">no</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+
+<script>
+
+/* =========================================================
+   CANVAS
+========================================================= */
+
+const canvas =
+  document.getElementById("canvas");
+
+const ctx =
+  canvas.getContext("2d");
+
+let dpr =
+  window.devicePixelRatio || 1;
+
+
+/* =========================================================
+   WORLD / ZOOM
+========================================================= */
+
+let spaceZoom = 1;
+
+/*
+  10% = enormous world
+  100% = default
+  1000% = very compressed world
+*/
+
+const MIN_ZOOM = 0.10;
+const MAX_ZOOM = 10;
+const BUTTON_ZOOM_FACTOR = 1.20;
+
+
+function getWorldSize() {
+
+  return {
+
+    width:
+      window.innerWidth /
+      spaceZoom,
+
+    height:
+      window.innerHeight /
+      spaceZoom
+
+  };
+
+}
+
+
+function worldToScreen(
+  x,
+  y
+) {
+
+  return {
+
+    x:
+      x *
+      spaceZoom,
+
+    y:
+      y *
+      spaceZoom
+
+  };
+
+}
+
+
+/* =========================================================
+   RESIZE
+========================================================= */
+
+function resizeCanvas() {
+
+  dpr =
+    window.devicePixelRatio || 1;
+
+  canvas.width =
+    window.innerWidth *
+    dpr;
+
+  canvas.height =
+    window.innerHeight *
+    dpr;
+
+  canvas.style.width =
+    window.innerWidth +
+    "px";
+
+  canvas.style.height =
+    window.innerHeight +
+    "px";
+
+  ctx.setTransform(
+    dpr,
+    0,
+    0,
+    dpr,
+    0,
+    0
+  );
+
+  clampAllBalls();
+
+  redrawLines();
+
+}
+
+
+window.addEventListener(
+  "resize",
+  resizeCanvas
+);
+
+
+/* =========================================================
+   AUDIO ENGINE
+========================================================= */
+
+let audioContext = null;
+let audioUnlocked = false;
+
+let recordingDestination = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordingBlob = null;
+let recordingStartedAt = 0;
+let recordingDurationSeconds = 0;
+let recordingObjectURL = null;
+
+
+function initAudio() {
+
+  if (!audioContext) {
+
+    audioContext =
+      new (
+        window.AudioContext ||
+        window.webkitAudioContext
+      )();
+
+  }
+
+  if (
+    audioContext.state ===
+    "suspended"
+  ) {
+
+    audioContext.resume();
+
+  }
+
+  if (
+    !recordingDestination
+  ) {
+
+    recordingDestination =
+      audioContext
+        .createMediaStreamDestination();
+
+  }
+
+  audioUnlocked = true;
+
+}
+
+
+document.addEventListener(
+  "pointerdown",
+  initAudio
+);
+
+document.addEventListener(
+  "keydown",
+  initAudio
+);
+
+
+/* =========================================================
+   AUDIO FILES
+========================================================= */
+
+const audioFiles = {
+
+  surface: null,
+  ball: null,
+  line: null
+
+};
+
+
+async function loadAudio(
+  type,
+  file
+) {
+
+  if (!file) return;
+
+  initAudio();
+
+  const arrayBuffer =
+    await file.arrayBuffer();
+
+  audioFiles[type] =
+    await audioContext
+      .decodeAudioData(
+        arrayBuffer
+      );
+
+}
+
+
+[
+  "surface",
+  "ball",
+  "line"
+
+].forEach(
+  type => {
+
+    document
+      .getElementById(
+        type +
+        "File"
+      )
+      .addEventListener(
+        "change",
+        e => {
+
+          loadAudio(
+            type,
+            e.target.files[0]
+          );
+
+        }
+      );
+
+  }
+);
+
+
+function setupCustomFileInputs() {
+  const inputs = document.querySelectorAll('.fileInput');
+  for (const input of inputs) {
+    if (input.dataset.decorated === '1') continue;
+    input.dataset.decorated = '1';
+    const picker = document.createElement('div');
+    picker.className = 'filePicker';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'filePickerButton';
+    button.textContent = 'choose file';
+    const name = document.createElement('span');
+    name.className = 'filePickerName';
+    name.textContent = 'no file';
+    button.addEventListener('click', () => input.click());
+    input.addEventListener('change', () => {
+      name.textContent = input.files && input.files[0]
+        ? input.files[0].name
+        : 'no file';
+    });
+    picker.appendChild(button);
+    picker.appendChild(name);
+    input.insertAdjacentElement('afterend', picker);
+  }
+}
+
+setupCustomFileInputs();
+
+/* =========================================================
+   PARAMETERS
+========================================================= */
+
+const eventParameters = {
+
+  surface: {
+
+    volume:
+      document.getElementById(
+        "surfaceVolume"
+      ),
+
+    size:
+      document.getElementById(
+        "surfaceSize"
+      ),
+
+    density:
+      document.getElementById(
+        "surfaceDensity"
+      ),
+
+    speed:
+      document.getElementById(
+        "surfaceSpeed"
+      ),
+
+    pitch:
+      document.getElementById(
+        "surfacePitch"
+      )
+
+  },
+
+
+  ball: {
+
+    volume:
+      document.getElementById(
+        "ballVolume"
+      ),
+
+    size:
+      document.getElementById(
+        "ballSize"
+      ),
+
+    density:
+      document.getElementById(
+        "ballDensity"
+      ),
+
+    speed:
+      document.getElementById(
+        "ballSpeedAudio"
+      ),
+
+    pitch:
+      document.getElementById(
+        "ballPitch"
+      )
+
+  },
+
+
+  line: {
+
+    volume:
+      document.getElementById(
+        "lineVolume"
+      ),
+
+    size:
+      document.getElementById(
+        "lineSize"
+      ),
+
+    density:
+      document.getElementById(
+        "lineDensity"
+      ),
+
+    speed:
+      document.getElementById(
+        "lineSpeed"
+      ),
+
+    pitch:
+      document.getElementById(
+        "linePitch"
+      )
+
+  }
+
+};
+
+
+/* =========================================================
+   VALUE DISPLAY
+========================================================= */
+
+function bindValue(
+  id,
+  valueId
+) {
+
+  const input =
+    document.getElementById(id);
+
+  const output =
+    document.getElementById(
+      valueId
+    );
+
+
+  function update() {
+
+    const step =
+      parseFloat(
+        input.step || 1
+      );
+
+    output.textContent =
+      Number(
+        input.value
+      ).toFixed(
+        step < 1
+          ? 2
+          : 0
+      );
+
+  }
+
+  input.addEventListener(
+    "input",
+    update
+  );
+
+  update();
+
+}
+
+
+const parameterIDs = [
+
+  "surfaceVolume",
+  "surfaceSize",
+  "surfaceDensity",
+  "surfaceSpeed",
+  "surfacePitch",
+
+  "ballVolume",
+  "ballSize",
+  "ballDensity",
+  "ballSpeedAudio",
+  "ballPitch",
+
+  "lineVolume",
+  "lineSize",
+  "lineDensity",
+  "lineSpeed",
+  "linePitch",
+
+
+  "ballVelocity"
+
+];
+
+
+parameterIDs.forEach(
+  id => {
+
+    bindValue(
+      id,
+      id +
+      "Value"
+    );
+
+  }
+);
+
+
+/* =========================================================
+   GRANULAR
+========================================================= */
+
+const grainPosition = {
+
+  surface: 0,
+  ball: 0,
+  line: 0
+
+};
+
+
+/* =========================================================
+   DENSE CONTACT -> HOLD SOUND
+   Same physical contact repeatedly firing becomes one looped
+   voice instead of spawning hundreds of grains.
+========================================================= */
+
+const CONTACT_WINDOW_MS = 220;
+const CONTACT_HOLD_THRESHOLD = 7;
+const CONTACT_RELEASE_MS = 150;
+const MAX_HOLD_VOICES = 12;
+const MAX_PHYSICS_SPEED = 18;
+
+const contactStates = new Map();
+const activeHoldContacts = new Map();
+const contactObjectIds = new WeakMap();
+let nextContactObjectId = 1;
+
+function contactObjectId(object, prefix = "o") {
+  if (!object || (typeof object !== "object" && typeof object !== "function")) {
+    return `${prefix}:none`;
+  }
+  if (!contactObjectIds.has(object)) {
+    contactObjectIds.set(object, `${prefix}${nextContactObjectId++}`);
+  }
+  return contactObjectIds.get(object);
+}
+
+function ballLineContactKey(ball, line) {
+  return `line:${contactObjectId(ball, "b")}:${contactObjectId(line, "l")}`;
+}
+
+function ballBallContactKey(a, b) {
+  const idA = contactObjectId(a, "b");
+  const idB = contactObjectId(b, "b");
+  return idA < idB ? `ball:${idA}:${idB}` : `ball:${idB}:${idA}`;
+}
+
+function ballSurfaceContactKey(ball, surfaceName) {
+  return `surface:${contactObjectId(ball, "b")}:${surfaceName}`;
+}
+
+function isContactHolding(contactKey) {
+  return !!contactKey && activeHoldContacts.has(contactKey);
+}
+
+function stopContactHold(contactKey) {
+  const hold = activeHoldContacts.get(contactKey);
+  if (!hold || !audioContext) {
+    activeHoldContacts.delete(contactKey);
+    return;
+  }
+
+  const now = audioContext.currentTime;
+  try {
+    hold.gain.gain.cancelScheduledValues(now);
+    hold.gain.gain.setValueAtTime(
+      Math.max(0.0001, hold.gain.gain.value || 0.0001),
+      now
+    );
+    hold.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+    hold.source.stop(now + 0.10);
+  }
+  catch (_) {}
+
+  activeHoldContacts.delete(contactKey);
+}
+
+function startContactHold(type, position, contactKey) {
+  if (
+    !contactKey ||
+    !audioUnlocked ||
+    !audioContext ||
+    !audioFiles[type] ||
+    activeHoldContacts.has(contactKey) ||
+    activeHoldContacts.size >= MAX_HOLD_VOICES
+  ) {
+    return;
+  }
+
+  const buffer = audioFiles[type];
+  const p = eventParameters[type];
+  const size = parseFloat(p.size.value);
+  const pitch = parseFloat(p.pitch.value);
+  const volume = parseFloat(p.volume.value);
+
+  const normalizedPosition = position === null
+    ? grainPosition[type]
+    : Math.max(0, Math.min(1, position));
+
+  const loopDuration = Math.min(
+    buffer.duration,
+    Math.max(0.025, Math.min(0.12, size * 0.65))
+  );
+
+  const maxStart = Math.max(0, buffer.duration - loopDuration);
+  const loopStart = normalizedPosition * maxStart;
+  const loopEnd = Math.min(buffer.duration, loopStart + loopDuration);
+
+  if (loopEnd - loopStart < 0.005) {
+    return;
+  }
+
+  const source = audioContext.createBufferSource();
+  const gain = audioContext.createGain();
+  const now = audioContext.currentTime;
+
+  source.buffer = buffer;
+  source.playbackRate.value = pitch;
+  source.loop = true;
+  source.loopStart = loopStart;
+  source.loopEnd = loopEnd;
+
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.linearRampToValueAtTime(
+    Math.max(0.0001, 0.16 * volume),
+    now + 0.035
+  );
+
+  source.connect(gain);
+  gain.connect(audioContext.destination);
+  if (recordingDestination) {
+    gain.connect(recordingDestination);
+  }
+
+  source.start(now, loopStart);
+
+  activeHoldContacts.set(contactKey, {
+    source,
+    gain,
+    type,
+    lastHit: performance.now()
+  });
+}
+
+function updateContactHolds() {
+  const now = performance.now();
+
+  for (const [key, hold] of activeHoldContacts) {
+    const state = contactStates.get(key);
+    const lastHit = state ? state.lastHit : hold.lastHit;
+    if (now - lastHit > CONTACT_RELEASE_MS) {
+      stopContactHold(key);
+      if (state) {
+        state.holding = false;
+        state.times = [];
+      }
+    }
+  }
+
+  for (const [key, state] of contactStates) {
+    if (!state.holding && now - state.lastHit > CONTACT_WINDOW_MS * 2) {
+      contactStates.delete(key);
+    }
+  }
+}
+
+function capBallVelocity(ball) {
+  if (!ball || ball.frozen || ball.isDragging) return;
+  const speed = Math.hypot(ball.vx, ball.vy);
+  if (speed > MAX_PHYSICS_SPEED) {
+    const scale = MAX_PHYSICS_SPEED / speed;
+    ball.vx *= scale;
+    ball.vy *= scale;
+  }
+}
+
+function playGrain(
+  type,
+  positionOverride = null
+) {
+
+  if (
+    !audioUnlocked ||
+    !audioContext ||
+    !audioFiles[type]
+  ) {
+
+    return;
+
+  }
+
+
+  const buffer =
+    audioFiles[type];
+
+  const p =
+    eventParameters[type];
+
+  const size =
+    parseFloat(
+      p.size.value
+    );
+
+  const speed =
+    parseFloat(
+      p.speed.value
+    );
+
+  const pitch =
+    parseFloat(
+      p.pitch.value
+    );
+
+  const volume =
+    parseFloat(
+      p.volume.value
+    );
+
+
+  let position;
+
+
+  if (
+    positionOverride !==
+    null
+  ) {
+
+    position =
+      Math.max(
+        0,
+        Math.min(
+          1,
+          positionOverride
+        )
+      );
+
+  }
+
+  else {
+
+    grainPosition[type] +=
+      0.008 *
+      speed;
+
+    if (
+      grainPosition[type] >
+      1
+    ) {
+
+      grainPosition[type] -=
+        1;
+
+    }
+
+    position =
+      grainPosition[type];
+
+  }
+
+
+  const duration =
+    Math.min(
+      size,
+      buffer.duration
+    );
+
+  const maxStart =
+    Math.max(
+      0,
+      buffer.duration -
+      duration
+    );
+
+  const start =
+    position *
+    maxStart;
+
+
+  const source =
+    audioContext
+      .createBufferSource();
+
+  const gain =
+    audioContext
+      .createGain();
+
+
+  source.buffer =
+    buffer;
+
+  source.playbackRate.value =
+    pitch;
+
+
+  const now =
+    audioContext.currentTime;
+
+
+  gain.gain.setValueAtTime(
+    0.0001,
+    now
+  );
+
+  gain.gain.linearRampToValueAtTime(
+    Math.max(
+      0.0001,
+      0.20 *
+      volume
+    ),
+    now +
+    duration *
+    0.12
+  );
+
+  gain.gain.exponentialRampToValueAtTime(
+    0.0001,
+    now +
+    duration
+  );
+
+
+  source.connect(
+    gain
+  );
+
+  gain.connect(
+    audioContext.destination
+  );
+
+
+  if (
+    recordingDestination
+  ) {
+
+    gain.connect(
+      recordingDestination
+    );
+
+  }
+
+
+  source.start(
+    now,
+    start,
+    duration
+  );
+
+  source.stop(
+    now +
+    duration +
+    0.02
+  );
+
+}
+
+
+/* =========================================================
+   EVENT BURST
+========================================================= */
+
+function triggerBurst(
+  type,
+  position = null
+) {
+
+  if (
+    !audioFiles[type]
+  ) {
+
+    return;
+
+  }
+
+
+  const density =
+    parseInt(
+      eventParameters[type]
+        .density.value
+    );
+
+
+  const count =
+    Math.max(
+      1,
+      Math.min(
+        12,
+        Math.round(
+          density /
+          5
+        )
+      )
+    );
+
+
+  for (
+    let i = 0;
+    i < count;
+    i++
+  ) {
+
+    setTimeout(
+      () => {
+
+        playGrain(
+          type,
+          position
+        );
+
+      },
+      i * 18
+    );
+
+  }
+
+}
+
+
+function triggerEvent(
+  type,
+  position = null,
+  contactKey = null
+) {
+
+  /* Drawing and any event without a physical contact key stay normal. */
+  if (!contactKey) {
+    triggerBurst(type, position);
+    return;
+  }
+
+  const now = performance.now();
+  let state = contactStates.get(contactKey);
+
+  if (!state) {
+    state = {
+      times: [],
+      lastHit: now,
+      holding: false,
+      type
+    };
+    contactStates.set(contactKey, state);
+  }
+
+  state.lastHit = now;
+  state.type = type;
+  state.times = state.times.filter(t => now - t <= CONTACT_WINDOW_MS);
+  state.times.push(now);
+
+  if (state.holding || isContactHolding(contactKey)) {
+    state.holding = true;
+    const hold = activeHoldContacts.get(contactKey);
+    if (hold) hold.lastHit = now;
+    return;
+  }
+
+  if (state.times.length >= CONTACT_HOLD_THRESHOLD) {
+    state.holding = true;
+    startContactHold(type, position, contactKey);
+    return;
+  }
+
+  triggerBurst(type, position);
+}
+
+
+
+/* =========================================================
+   DRAWING
+========================================================= */
+
+let lines = [];
+
+let currentLine = null;
+
+let drawing = false;
+
+let drawingTool =
+  "addBall";
+
+let lastDrawingSound =
+  0;
+
+
+/* Fixed visual line width */
+const FIXED_LINE_WIDTH = 1.5;
+
+
+function eventToNormalizedPoint(
+  e
+) {
+
+  return {
+
+    x:
+      e.clientX /
+      window.innerWidth,
+
+    y:
+      e.clientY /
+      window.innerHeight
+
+  };
+
+}
+
+
+function normalizedToWorld(
+  point
+) {
+
+  const world =
+    getWorldSize();
+
+  return {
+
+    x:
+      point.x *
+      world.width,
+
+    y:
+      point.y *
+      world.height
+
+  };
+
+}
+
+
+/* =========================================================
+   REDRAW
+========================================================= */
+
+let eraserPreviewX = null;
+let eraserPreviewY = null;
+let eraserLastX = null;
+let eraserLastY = null;
+const ERASER_HALF_SIZE = 9;
+const DRAW_INTERPOLATION_STEP = 5;
+
+function redrawLines() {
+
+  ctx.clearRect(
+    0,
+    0,
+    window.innerWidth,
+    window.innerHeight
+  );
+
+
+  ctx.strokeStyle =
+    "#111111";
+
+  ctx.lineWidth =
+    FIXED_LINE_WIDTH;
+
+  ctx.lineCap =
+    "round";
+
+  ctx.lineJoin =
+    "round";
+
+
+  for (
+    const line of lines
+  ) {
+
+    if (
+      line.length < 2
+    ) {
+
+      continue;
+
+    }
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      line[0].x *
+      window.innerWidth,
+
+      line[0].y *
+      window.innerHeight
+    );
+
+    for (
+      let i = 1;
+      i < line.length;
+      i++
+    ) {
+
+      ctx.lineTo(
+        line[i].x *
+        window.innerWidth,
+
+        line[i].y *
+        window.innerHeight
+      );
+
+    }
+
+    ctx.stroke();
+
+  }
+
+  /*
+    Eraser hover preview: visually remove only the area inside
+    the square without changing the line data until pointerdown.
+  */
+  if (
+    drawingTool === "eraser" &&
+    eraserPreviewX !== null &&
+    eraserPreviewY !== null
+  ) {
+    ctx.save();
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(
+      eraserPreviewX - ERASER_HALF_SIZE,
+      eraserPreviewY - ERASER_HALF_SIZE,
+      ERASER_HALF_SIZE * 2,
+      ERASER_HALF_SIZE * 2
+    );
+    ctx.restore();
+  }
+
+}
+
+
+/* =========================================================
+   ERASER
+========================================================= */
+
+function eraseAt(
+  x,
+  y
+) {
+
+  /*
+    Square eraser. Only the area inside the visible □ cursor
+    removes line points.
+  */
+  const halfSize = ERASER_HALF_SIZE;
+
+  const newLines = [];
+
+  for (const line of lines) {
+
+    let fragment = [];
+
+    for (const point of line) {
+
+      const px = point.x * window.innerWidth;
+      const py = point.y * window.innerHeight;
+
+      const insideSquare =
+        Math.abs(px - x) <= halfSize &&
+        Math.abs(py - y) <= halfSize;
+
+      if (!insideSquare) {
+        fragment.push(point);
+      }
+      else {
+        if (fragment.length > 1) {
+          fragment.dragVx = line.dragVx || 0;
+          fragment.dragVy = line.dragVy || 0;
+          newLines.push(fragment);
+        }
+        fragment = [];
+      }
+    }
+
+    if (fragment.length > 1) {
+      fragment.dragVx = line.dragVx || 0;
+      fragment.dragVy = line.dragVy || 0;
+      newLines.push(fragment);
+    }
+  }
+
+  lines = newLines;
+  redrawLines();
+
+}
+
+
+/* =========================================================
+   MOVABLE LINE
+========================================================= */
+
+let movingLine =
+  null;
+
+let movingLineLastX =
+  0;
+
+let movingLineLastY =
+  0;
+
+let movingLineLastTime =
+  0;
+
+
+function pointToSegmentDistance(
+  px,
+  py,
+  x1,
+  y1,
+  x2,
+  y2
+) {
+
+  const dx =
+    x2 - x1;
+
+  const dy =
+    y2 - y1;
+
+  const lengthSquared =
+    dx * dx +
+    dy * dy;
+
+
+  if (
+    lengthSquared === 0
+  ) {
+
+    return Math.hypot(
+      px - x1,
+      py - y1
+    );
+
+  }
+
+
+  let t =
+    (
+      (px - x1) * dx +
+      (py - y1) * dy
+    ) /
+    lengthSquared;
+
+
+  t =
+    Math.max(
+      0,
+      Math.min(
+        1,
+        t
+      )
+    );
+
+
+  const x =
+    x1 +
+    t * dx;
+
+  const y =
+    y1 +
+    t * dy;
+
+
+  return Math.hypot(
+    px - x,
+    py - y
+  );
+
+}
+
+
+function findLineAt(
+  screenX,
+  screenY
+) {
+
+  const hitRadius =
+    Math.max(
+      10,
+      FIXED_LINE_WIDTH +
+      7
+    );
+
+
+  /*
+    後から描いた線を優先して掴む
+  */
+
+  for (
+    let lineIndex =
+      lines.length - 1;
+    lineIndex >= 0;
+    lineIndex--
+  ) {
+
+    const line =
+      lines[lineIndex];
+
+
+    for (
+      let i = 1;
+      i < line.length;
+      i++
+    ) {
+
+      const p1 =
+        line[i - 1];
+
+      const p2 =
+        line[i];
+
+
+      const distance =
+        pointToSegmentDistance(
+          screenX,
+          screenY,
+          p1.x * window.innerWidth,
+          p1.y * window.innerHeight,
+          p2.x * window.innerWidth,
+          p2.y * window.innerHeight
+        );
+
+
+      if (
+        distance <=
+        hitRadius
+      ) {
+
+        return line;
+
+      }
+
+    }
+
+  }
+
+
+  return null;
+
+}
+
+
+function moveLineBy(
+  line,
+  dxPixels,
+  dyPixels
+) {
+
+  if (
+    !line
+  ) {
+
+    return;
+
+  }
+
+
+  let minX = 1;
+  let maxX = 0;
+  let minY = 1;
+  let maxY = 0;
+
+
+  for (
+    const point of line
+  ) {
+
+    minX =
+      Math.min(
+        minX,
+        point.x
+      );
+
+    maxX =
+      Math.max(
+        maxX,
+        point.x
+      );
+
+    minY =
+      Math.min(
+        minY,
+        point.y
+      );
+
+    maxY =
+      Math.max(
+        maxY,
+        point.y
+      );
+
+  }
+
+
+  let dx =
+    dxPixels /
+    window.innerWidth;
+
+  let dy =
+    dyPixels /
+    window.innerHeight;
+
+
+  dx =
+    Math.max(
+      -minX,
+      Math.min(
+        1 - maxX,
+        dx
+      )
+    );
+
+
+  dy =
+    Math.max(
+      -minY,
+      Math.min(
+        1 - maxY,
+        dy
+      )
+    );
+
+
+  for (
+    const point of line
+  ) {
+
+    point.x += dx;
+    point.y += dy;
+
+  }
+
+}
+
+
+
+/* =========================================================
+   FROZEN BALL / MOVING LINE CONTACT
+========================================================= */
+
+function lineTouchesBall(
+  line,
+  ball
+) {
+
+  const radius = ball.size / 2;
+  const cx = ball.x + radius;
+  const cy = ball.y + radius;
+  const collisionWidth = (FIXED_LINE_WIDTH * 0.5) / spaceZoom;
+  const targetDistance = radius + collisionWidth;
+
+  for (let i = 1; i < line.length; i++) {
+    const p1 = normalizedToWorld(line[i - 1]);
+    const p2 = normalizedToWorld(line[i]);
+    const closest = closestPoint(cx, cy, p1.x, p1.y, p2.x, p2.y);
+    if (Math.hypot(cx - closest.x, cy - closest.y) <= targetDistance) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+/* =========================================================
+   LIGHTWEIGHT CONTINUOUS DRAG COLLISION (CCD)
+   - keeps rendering at normal frame rate
+   - avoids 2px sub-step loops
+========================================================= */
+
+function sweepPointVsCircle(
+  px,
+  py,
+  moveX,
+  moveY,
+  cx,
+  cy,
+  radius
+) {
+
+  const ox = px - cx;
+  const oy = py - cy;
+  const a = moveX * moveX + moveY * moveY;
+
+  if (a < 0.0000001) {
+    return null;
+  }
+
+  const b = 2 * (ox * moveX + oy * moveY);
+  const c = ox * ox + oy * oy - radius * radius;
+  const discriminant = b * b - 4 * a * c;
+
+  if (discriminant < 0) {
+    return null;
+  }
+
+  const root = Math.sqrt(discriminant);
+  const candidates = [
+    (-b - root) / (2 * a),
+    (-b + root) / (2 * a)
+  ];
+
+  for (const t of candidates) {
+    if (t < -0.0001 || t > 1.0001) continue;
+
+    const clampedT = Math.max(0, Math.min(1, t));
+    const hx = px + moveX * clampedT;
+    const hy = py + moveY * clampedT;
+    let nx = hx - cx;
+    let ny = hy - cy;
+    const length = Math.hypot(nx, ny);
+
+    if (length < 0.0001) continue;
+
+    nx /= length;
+    ny /= length;
+
+    /* Ignore a tangent point when the object is moving away. */
+    if (moveX * nx + moveY * ny >= -0.00001) continue;
+
+    return {
+      t: clampedT,
+      nx,
+      ny
+    };
+  }
+
+  return null;
+}
+
+
+function sweepPointVsSegmentCapsule(
+  px,
+  py,
+  moveX,
+  moveY,
+  x1,
+  y1,
+  x2,
+  y2,
+  radius
+) {
+
+  const sx = x2 - x1;
+  const sy = y2 - y1;
+  const segmentLength = Math.hypot(sx, sy);
+  let best = null;
+
+  function consider(hit) {
+    if (!hit) return;
+    if (!best || hit.t < best.t) best = hit;
+  }
+
+  /* Rounded ends of the capsule. */
+  consider(
+    sweepPointVsCircle(
+      px, py,
+      moveX, moveY,
+      x1, y1,
+      radius
+    )
+  );
+
+  consider(
+    sweepPointVsCircle(
+      px, py,
+      moveX, moveY,
+      x2, y2,
+      radius
+    )
+  );
+
+  if (segmentLength < 0.0001) {
+    return best;
+  }
+
+  const ux = sx / segmentLength;
+  const uy = sy / segmentLength;
+  const normalX = -uy;
+  const normalY = ux;
+
+  const relX = px - x1;
+  const relY = py - y1;
+  const along0 = relX * ux + relY * uy;
+  const normal0 = relX * normalX + relY * normalY;
+  const alongSpeed = moveX * ux + moveY * uy;
+  const normalSpeed = moveX * normalX + moveY * normalY;
+
+  if (Math.abs(normalSpeed) > 0.000001) {
+    for (const side of [-1, 1]) {
+      const t = (side * radius - normal0) / normalSpeed;
+      if (t < -0.0001 || t > 1.0001) continue;
+
+      const clampedT = Math.max(0, Math.min(1, t));
+      const along = along0 + alongSpeed * clampedT;
+      if (along < -0.0001 || along > segmentLength + 0.0001) continue;
+
+      const nx = normalX * side;
+      const ny = normalY * side;
+
+      /* Only count an approach toward this side of the segment. */
+      if (moveX * nx + moveY * ny >= -0.00001) continue;
+
+      consider({
+        t: clampedT,
+        nx,
+        ny
+      });
+    }
+  }
+
+  return best;
+}
+
+
+function findSweptBallDragHit(
+  ball,
+  moveX,
+  moveY
+) {
+
+  const radius = ball.size / 2;
+  const startCx = ball.x + radius;
+  const startCy = ball.y + radius;
+  let best = null;
+
+  function consider(hit) {
+    if (!hit) return;
+    if (!best || hit.t < best.t) best = hit;
+  }
+
+  for (const other of balls) {
+    if (other === ball || other.isDragging) continue;
+
+    const otherRadius = other.size / 2;
+    const hit = sweepPointVsCircle(
+      startCx,
+      startCy,
+      moveX,
+      moveY,
+      other.x + otherRadius,
+      other.y + otherRadius,
+      radius + otherRadius
+    );
+
+    if (hit) {
+      /* Circle helper returns target -> moving ball. Flip to source -> target. */
+      consider({
+        ...hit,
+        nx: -hit.nx,
+        ny: -hit.ny,
+        type: "ball",
+        other
+      });
+    }
+  }
+
+  const lineRadius = radius + (FIXED_LINE_WIDTH * 0.5) / spaceZoom;
+
+  for (const line of lines) {
+    for (let i = 1; i < line.length; i++) {
+      const p1 = normalizedToWorld(line[i - 1]);
+      const p2 = normalizedToWorld(line[i]);
+      const hit = sweepPointVsSegmentCapsule(
+        startCx,
+        startCy,
+        moveX,
+        moveY,
+        p1.x,
+        p1.y,
+        p2.x,
+        p2.y,
+        lineRadius
+      );
+
+      if (hit) {
+        consider({
+          ...hit,
+          type: "line"
+        });
+      }
+    }
+  }
+
+  return best;
+}
+
+
+function findSweptLineDragHit(
+  line,
+  moveX,
+  moveY
+) {
+
+  let best = null;
+
+  function consider(hit) {
+    if (!hit) return;
+    if (!best || hit.t < best.t) best = hit;
+  }
+
+  for (const ball of balls) {
+    const radius = ball.size / 2 + (FIXED_LINE_WIDTH * 0.5) / spaceZoom;
+    const cx = ball.x + ball.size / 2;
+    const cy = ball.y + ball.size / 2;
+
+    for (let i = 1; i < line.length; i++) {
+      const p1 = normalizedToWorld(line[i - 1]);
+      const p2 = normalizedToWorld(line[i]);
+
+      /* Relative motion: keep the line still and move the ball backwards. */
+      const hit = sweepPointVsSegmentCapsule(
+        cx,
+        cy,
+        -moveX,
+        -moveY,
+        p1.x,
+        p1.y,
+        p2.x,
+        p2.y,
+        radius
+      );
+
+      if (hit) {
+        /* Relative helper returns line -> ball already. */
+        consider({
+          ...hit,
+          type: "ball",
+          ball
+        });
+      }
+    }
+  }
+
+  return best;
+}
+
+
+function applyDraggedImpactToBall(
+  targetBall,
+  nx,
+  ny,
+  sourceVx,
+  sourceVy
+) {
+
+  if (targetBall.frozen) return;
+
+  const sourceNormalSpeed =
+    (sourceVx * DRAG_CONTACT_SCALE) * nx +
+    (sourceVy * DRAG_CONTACT_SCALE) * ny;
+
+  const targetNormalSpeed =
+    targetBall.vx * nx +
+    targetBall.vy * ny;
+
+  const closingSpeed =
+    sourceNormalSpeed - targetNormalSpeed;
+
+  if (closingSpeed <= 0) return;
+
+  const restitution = 0.96;
+  const impulse = (1 + restitution) * closingSpeed;
+
+  targetBall.vx += impulse * nx;
+  targetBall.vy += impulse * ny;
+  targetBall.stoppedByStop = false;
+
+  if (worldStopped) {
+    targetBall.preStopVx = targetBall.vx;
+    targetBall.preStopVy = targetBall.vy;
+    targetBall.vx = 0;
+    targetBall.vy = 0;
+    targetBall.stoppedByStop = true;
+  }
+}
+
+
+/* =========================================================
+   POINTER DRAW
+========================================================= */
+
+const GRAB_HIT_MARGIN = 22;
+
+function findBallsForGrab(screenX, screenY) {
+  const nearbyBalls = [];
+
+  for (const ball of balls) {
+    const centerX = (ball.x + ball.size / 2) * spaceZoom;
+    const centerY = (ball.y + ball.size / 2) * spaceZoom;
+    const dx = screenX - centerX;
+    const dy = screenY - centerY;
+    const distanceSquared = dx * dx + dy * dy;
+    const hitRadius = ball.size * spaceZoom / 2 + GRAB_HIT_MARGIN;
+
+    if (distanceSquared <= hitRadius * hitRadius) {
+      nearbyBalls.push({ ball, distanceSquared });
+    }
+  }
+
+  nearbyBalls.sort(
+    (a, b) => a.distanceSquared - b.distanceSquared
+  );
+
+  return nearbyBalls.map(item => item.ball);
+}
+
+/* Live eraser preview, even when the mouse button is not down. */
+canvas.addEventListener(
+  "pointermove",
+  e => {
+    if (drawingTool !== "eraser") return;
+    eraserPreviewX = e.clientX;
+    eraserPreviewY = e.clientY;
+    redrawLines();
+  }
+);
+
+canvas.addEventListener(
+  "pointerleave",
+  () => {
+    if (eraserPreviewX === null && eraserPreviewY === null) return;
+    eraserPreviewX = null;
+    eraserPreviewY = null;
+    redrawLines();
+  }
+);
+
+canvas.addEventListener(
+  "pointerdown",
+  e => {
+
+    if (
+      e.button !== 0
+    ) {
+
+      return;
+
+    }
+
+
+    initAudio();
+
+
+    canvas.setPointerCapture(
+      e.pointerId
+    );
+
+
+    /*
+      ADD BALL — each ball is placed manually.
+    */
+
+    if (
+      drawingTool ===
+      "addBall"
+    ) {
+
+      const size =
+        baseBallSize();
+
+      createBall(
+        balls.length,
+        e.clientX / spaceZoom - size / 2,
+        e.clientY / spaceZoom - size / 2
+      );
+
+      for (let pass = 0; pass < 5; pass++) {
+        checkBallCollisions();
+        for (const ball of balls) {
+          checkLineCollision(ball);
+        }
+        clampAllBalls();
+      }
+
+      return;
+
+    }
+
+
+    if (
+      drawingTool ===
+      "freeze"
+    ) {
+      return;
+    }
+
+    /* REMOVE BALL only acts on a ball. Empty canvas does nothing. */
+    if (
+      drawingTool ===
+      "removeBall"
+    ) {
+      return;
+    }
+
+
+    /*
+      MOVE LINE
+    */
+
+    if (
+      drawingTool ===
+      "grab"
+    ) {
+
+      movingLine =
+        findLineAt(
+          e.clientX,
+          e.clientY
+        );
+
+
+      if (
+        movingLine
+      ) {
+
+        drawing =
+          true;
+
+        movingLineLastX =
+          e.clientX;
+
+        movingLineLastY =
+          e.clientY;
+
+        movingLineLastTime =
+          performance.now();
+
+        movingLine.dragVx =
+          0;
+
+        movingLine.dragVy =
+          0;
+
+      }
+
+
+      return;
+
+    }
+
+
+    drawing =
+      true;
+
+
+    if (
+      drawingTool ===
+      "eraser"
+    ) {
+
+      eraserLastX = e.clientX;
+      eraserLastY = e.clientY;
+
+      eraseAt(
+        e.clientX,
+        e.clientY
+      );
+
+      return;
+
+    }
+
+
+    const point =
+      eventToNormalizedPoint(
+        e
+      );
+
+
+    currentLine =
+      [point];
+
+
+    currentLine.dragVx =
+      0;
+
+    currentLine.dragVy =
+      0;
+
+
+    lines.push(
+      currentLine
+    );
+
+  }
+);
+
+
+canvas.addEventListener(
+  "pointermove",
+  e => {
+
+    if (
+      !drawing
+    ) {
+
+      return;
+
+    }
+
+
+    /*
+      MOVE LINE
+    */
+
+    if (
+      drawingTool ===
+      "grab"
+    ) {
+
+      if (
+        !movingLine
+      ) {
+
+        return;
+
+      }
+
+
+      const now =
+        performance.now();
+
+
+      const dx =
+        e.clientX -
+        movingLineLastX;
+
+      const dy =
+        e.clientY -
+        movingLineLastY;
+
+
+      const dt =
+        Math.max(
+          1,
+          now -
+          movingLineLastTime
+        );
+
+
+      /*
+        1フレームあたりのworld速度に変換。
+        線を速く振るほどボールに強く作用する。
+      */
+
+      movingLine.dragVx =
+        (
+          dx /
+          spaceZoom
+        ) *
+        (
+          16.667 /
+          dt
+        );
+
+
+      movingLine.dragVy =
+        (
+          dy /
+          spaceZoom
+        ) *
+        (
+          16.667 /
+          dt
+        );
+
+
+      /*
+        Lightweight CCD: test the whole drag path once instead of
+        splitting it into 2px sub-steps. This keeps the mouse responsive
+        while still catching fast crossings.
+      */
+      const moveWorldX = dx / spaceZoom;
+      const moveWorldY = dy / spaceZoom;
+      const sweptHit = findSweptLineDragHit(
+        movingLine,
+        moveWorldX,
+        moveWorldY
+      );
+
+      let allowedT = 1;
+
+      if (sweptHit) {
+        allowedT = Math.max(0, sweptHit.t - 0.0005);
+
+        applyDraggedImpactToBall(
+          sweptHit.ball,
+          sweptHit.nx,
+          sweptHit.ny,
+          movingLine.dragVx,
+          movingLine.dragVy
+        );
+
+        const world = getWorldSize();
+        triggerEvent(
+          "line",
+          sweptHit.ball.x / world.width,
+          ballLineContactKey(sweptHit.ball, movingLine)
+        );
+      }
+
+      moveLineBy(
+        movingLine,
+        dx * allowedT,
+        dy * allowedT
+      );
+
+      /* A tiny final solve keeps tangent contacts visually clean. */
+      for (const ball of balls) {
+        checkLineCollision(ball);
+      }
+      checkBallCollisions();
+      clampAllBalls();
+
+
+      movingLineLastX =
+        e.clientX;
+
+      movingLineLastY =
+        e.clientY;
+
+      movingLineLastTime =
+        now;
+
+
+      redrawLines();
+
+
+      return;
+
+    }
+
+
+    if (
+      drawingTool ===
+      "eraser"
+    ) {
+
+      const startX = eraserLastX ?? e.clientX;
+      const startY = eraserLastY ?? e.clientY;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      const distance = Math.hypot(dx, dy);
+      const steps = Math.max(1, Math.ceil(distance / DRAW_INTERPOLATION_STEP));
+
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        eraseAt(
+          startX + dx * t,
+          startY + dy * t
+        );
+      }
+
+      eraserLastX = e.clientX;
+      eraserLastY = e.clientY;
+
+      return;
+
+    }
+
+
+    if (
+      !currentLine
+    ) {
+
+      return;
+
+    }
+
+
+    const point =
+      eventToNormalizedPoint(
+        e
+      );
+
+
+    const last =
+      currentLine[
+        currentLine.length -
+        1
+      ];
+
+
+    const dx =
+      (
+        point.x -
+        last.x
+      ) *
+      window.innerWidth;
+
+
+    const dy =
+      (
+        point.y -
+        last.y
+      ) *
+      window.innerHeight;
+
+
+    const distance =
+      Math.sqrt(
+        dx *
+        dx +
+        dy *
+        dy
+      );
+
+
+    if (
+      distance > 1
+    ) {
+
+      const steps = Math.max(
+        1,
+        Math.ceil(distance / DRAW_INTERPOLATION_STEP)
+      );
+
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        currentLine.push({
+          x: last.x + (point.x - last.x) * t,
+          y: last.y + (point.y - last.y) * t
+        });
+      }
+
+
+      redrawLines();
+
+    }
+
+  }
+);
+
+
+function stopDrawing() {
+
+  if (
+    movingLine
+  ) {
+
+    movingLine.dragVx =
+      0;
+
+    movingLine.dragVy =
+      0;
+
+  }
+
+
+  movingLine =
+    null;
+
+  eraserLastX = null;
+  eraserLastY = null;
+
+  drawing =
+    false;
+
+  currentLine =
+    null;
+
+}
+
+
+canvas.addEventListener(
+  "pointerup",
+  stopDrawing
+);
+
+
+canvas.addEventListener(
+  "pointercancel",
+  stopDrawing
+);
+
+
+/* =========================================================
+   DRAW TOOLS
+========================================================= */
+
+const penTool =
+  document.getElementById(
+    "penTool"
+  );
+
+const eraserTool =
+  document.getElementById(
+    "eraserTool"
+  );
+
+const grabTool =
+  document.getElementById(
+    "grabTool"
+  );
+
+const addBallTool =
+  document.getElementById(
+    "addBallTool"
+  );
+
+const freezeTool =
+  document.getElementById(
+    "freezeTool"
+  );
+
+const removeBallTool =
+  document.getElementById(
+    "removeBallTool"
+  );
+
+const clearBallsTool =
+  document.getElementById(
+    "clearBallsTool"
+  );
+
+
+function setTool(
+  tool
+) {
+
+  if (typeof releaseGravity === "function") releaseGravity();
+  if (typeof releaseRepel === "function") releaseRepel();
+
+  drawingTool =
+    tool;
+
+  if (tool !== "eraser") {
+    eraserPreviewX = null;
+    eraserPreviewY = null;
+  }
+
+  penTool
+    .classList
+    .toggle(
+      "active",
+      tool === "pen"
+    );
+
+  eraserTool
+    .classList
+    .toggle(
+      "active",
+      tool === "eraser"
+    );
+
+  grabTool
+    .classList
+    .toggle(
+      "active",
+      tool === "grab"
+    );
+
+  gravityButton
+    .classList
+    .toggle(
+      "active",
+      tool === "gravity"
+    );
+
+  repelButton
+    .classList
+    .toggle(
+      "active",
+      tool === "repel"
+    );
+
+  addBallTool
+    .classList
+    .toggle(
+      "active",
+      tool === "addBall"
+    );
+
+  freezeTool
+    .classList
+    .toggle(
+      "active",
+      tool === "freeze"
+    );
+
+  removeBallTool
+    .classList
+    .toggle(
+      "active",
+      tool === "removeBall"
+    );
+
+
+  const penCursor =
+    `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18'%3E%3Cpath d='M3 14.5l1-3.5L12.5 2.5l3 3L7 14l-4 1z' fill='none' stroke='%23111' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpath d='M11.6 3.4l3 3' stroke='%23111' stroke-width='1.2'/%3E%3C/svg%3E") 3 15, default`;
+
+  const eraserCursor =
+    `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Crect x='1' y='1' width='18' height='18' fill='none' stroke='%23111' stroke-width='0.8'/%3E%3C/svg%3E") 10 10, cell`;
+
+  const addBallCursor =
+    `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18'%3E%3Ccircle cx='5' cy='9' r='2' fill='%23111'/%3E%3Cpath d='M12 6v6M9 9h6' stroke='%23111' stroke-width='1.3'/%3E%3C/svg%3E") 5 9, copy`;
+
+  const removeBallCursor =
+    `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18'%3E%3Ccircle cx='5' cy='9' r='2' fill='%23111'/%3E%3Cpath d='M9 9h6' stroke='%23111' stroke-width='1.3'/%3E%3C/svg%3E") 5 9, not-allowed`;
+
+  const activeCursor =
+    tool === "eraser"
+      ? eraserCursor
+      : tool === "grab"
+        ? "crosshair"
+        : tool === "gravity"
+          ? "crosshair"
+          : tool === "repel"
+            ? "crosshair"
+            : tool === "addBall"
+              ? addBallCursor
+              : tool === "removeBall"
+                ? removeBallCursor
+                : tool === "freeze"
+                  ? "pointer"
+                  : penCursor;
+
+  canvas.style.cursor = activeCursor;
+  for (const ball of balls) {
+    ball.element.classList.toggle(
+      "grabHitArea",
+      false
+    );
+    ball.element.style.cursor = activeCursor;
+  }
+
+  redrawLines();
+
+}
+
+
+penTool.addEventListener(
+  "click",
+  () => setTool("pen")
+);
+
+
+eraserTool.addEventListener(
+  "click",
+  () => setTool("eraser")
+);
+
+grabTool.addEventListener(
+  "click",
+  () => setTool("grab")
+);
+
+document.getElementById("gravityButton").addEventListener(
+  "click",
+  () => setTool("gravity")
+);
+
+document.getElementById("repelButton").addEventListener(
+  "click",
+  () => setTool("repel")
+);
+
+addBallTool.addEventListener(
+  "click",
+  () => setTool("addBall")
+);
+
+freezeTool.addEventListener(
+  "click",
+  () => setTool("freeze")
+);
+
+removeBallTool.addEventListener(
+  "click",
+  () => setTool("removeBall")
+);
+
+
+/* =========================================================
+   YES / NO CONFIRM
+========================================================= */
+
+const confirmOverlay = document.getElementById("confirmOverlay");
+const confirmMessage = document.getElementById("confirmMessage");
+const confirmYes = document.getElementById("confirmYes");
+const confirmNo = document.getElementById("confirmNo");
+let confirmAction = null;
+
+function showConfirm(message, onYes, anchorElement) {
+  confirmMessage.textContent = message;
+  confirmAction = onYes;
+
+  const rect = anchorElement.getBoundingClientRect();
+  const popupWidth = 150;
+  const left = Math.min(
+    window.innerWidth - popupWidth - 6,
+    rect.right + 5
+  );
+  const top = Math.max(
+    6,
+    rect.top - 18
+  );
+
+  confirmOverlay.style.left = left + "px";
+  confirmOverlay.style.top = top + "px";
+  confirmOverlay.style.display = "flex";
+}
+
+function hideConfirm() {
+  confirmOverlay.style.display = "none";
+  confirmAction = null;
+}
+
+confirmYes.addEventListener("click", () => {
+  const action = confirmAction;
+  hideConfirm();
+  if (action) action();
+});
+
+confirmNo.addEventListener("click", hideConfirm);
+
+
+document.addEventListener("pointerdown", e => {
+  if (confirmOverlay.style.display === "none" || !confirmOverlay.style.display) return;
+  if (confirmOverlay.contains(e.target)) return;
+  if (e.target.closest && (e.target.closest("#clearTool") || e.target.closest("#clearBallsTool"))) return;
+  hideConfirm();
+});
+
+
+document
+  .getElementById(
+    "clearTool"
+  )
+  .addEventListener(
+    "click",
+    e => {
+      showConfirm("delete all lines?", () => {
+        lines = [];
+        currentLine = null;
+        redrawLines();
+      }, e.currentTarget);
+    }
+  );
+
+clearBallsTool.addEventListener(
+  "click",
+  e => {
+    showConfirm("delete all balls?", () => {
+      for (const ball of [...balls]) {
+        ball.element.remove();
+      }
+      balls.length = 0;
+      ballElements.length = 0;
+      countControl.value = 0;
+    }, e.currentTarget);
+  }
+);
+
+
+/* =========================================================
+   LINE COLLISION
+========================================================= */
+
+function closestPoint(
+  px,
+  py,
+  x1,
+  y1,
+  x2,
+  y2
+) {
+
+  const dx =
+    x2 - x1;
+
+  const dy =
+    y2 - y1;
+
+  const len =
+    dx *
+    dx +
+    dy *
+    dy;
+
+
+  if (
+    len === 0
+  ) {
+
+    return {
+      x: x1,
+      y: y1
+    };
+
+  }
+
+
+  let t =
+    (
+      (
+        px - x1
+      ) *
+      dx +
+
+      (
+        py - y1
+      ) *
+      dy
+    ) /
+    len;
+
+
+  t =
+    Math.max(
+      0,
+      Math.min(
+        1,
+        t
+      )
+    );
+
+
+  return {
+
+    x:
+      x1 +
+      t *
+      dx,
+
+    y:
+      y1 +
+      t *
+      dy
+
+  };
+
+}
+
+
+/* Same hand-force scale for dragged LINE and dragged BALL. */
+const DRAG_CONTACT_SCALE = 0.10;
+
+function checkLineCollision(
+  ball
+) {
+
+  const radius =
+    ball.size /
+    2;
+
+  const cx =
+    ball.x +
+    radius;
+
+  const cy =
+    ball.y +
+    radius;
+
+
+  for (
+    const line of lines
+  ) {
+
+    for (
+      let i = 1;
+      i < line.length;
+      i++
+    ) {
+
+      const p1 =
+        normalizedToWorld(
+          line[i - 1]
+        );
+
+      const p2 =
+        normalizedToWorld(
+          line[i]
+        );
+
+      const closest =
+        closestPoint(
+          cx,
+          cy,
+          p1.x,
+          p1.y,
+          p2.x,
+          p2.y
+        );
+
+      let dx =
+        cx -
+        closest.x;
+
+      let dy =
+        cy -
+        closest.y;
+
+      const distance =
+        Math.sqrt(
+          dx *
+          dx +
+          dy *
+          dy
+        );
+
+
+      const collisionWidth =
+        (FIXED_LINE_WIDTH * 0.5) /
+        spaceZoom;
+
+
+      if (
+        distance <=
+        radius +
+        collisionWidth
+      ) {
+
+        if (
+          distance <
+          0.001
+        ) {
+
+          dx = 0;
+          dy = -1;
+
+        }
+
+
+        const length =
+          Math.sqrt(
+            dx *
+            dx +
+            dy *
+            dy
+          );
+
+        let nx =
+          dx /
+          length;
+
+        let ny =
+          dy /
+          length;
+
+        /* Near-horizontal / near-vertical lines get an exact axis normal.
+           This removes accidental sideways drift from a horizontal line. */
+        const segmentDx = p2.x - p1.x;
+        const segmentDy = p2.y - p1.y;
+        if (Math.abs(segmentDy) <= Math.max(0.5, Math.abs(segmentDx) * 0.015)) {
+          nx = 0;
+          ny = dy >= 0 ? 1 : -1;
+        }
+        else if (Math.abs(segmentDx) <= Math.max(0.5, Math.abs(segmentDy) * 0.015)) {
+          nx = dx >= 0 ? 1 : -1;
+          ny = 0;
+        }
+
+        /*
+          Resolve penetration first so the circle sits
+          exactly on the line surface instead of overlapping.
+        */
+        const targetDistance =
+          radius +
+          collisionWidth;
+
+        const penetration =
+          Math.max(
+            0,
+            targetDistance -
+            distance
+          );
+
+        if (
+          penetration >
+          0 &&
+          (!ball.frozen || ball.isDragging)
+        ) {
+
+          ball.x +=
+            nx *
+            (penetration + 0.001);
+
+          ball.y +=
+            ny *
+            (penetration + 0.001);
+
+        }
+
+
+        /*
+          Moving-line hand velocity is intentionally softened.
+          Fast mouse movement should feel like a physical nudge/strike,
+          not a huge launcher.
+        */
+        const lineVx =
+          (line.dragVx || 0) * DRAG_CONTACT_SCALE;
+
+        const lineVy =
+          (line.dragVy || 0) * DRAG_CONTACT_SCALE;
+
+
+        /*
+          ボールから見た「動いている線」への相対速度。
+          線を振ってぶつけた時も衝突として扱う。
+        */
+
+        const ballVx =
+          ball.isDragging
+            ? ball.dragVx
+            : ball.frozen
+              ? 0
+              : ball.vx;
+
+        const ballVy =
+          ball.isDragging
+            ? ball.dragVy
+            : ball.frozen
+              ? 0
+              : ball.vy;
+
+        const relativeVelocity =
+          (
+            ballVx -
+            lineVx
+          ) *
+          nx +
+          (
+            ballVy -
+            lineVy
+          ) *
+          ny;
+
+
+        const lineIsMoving =
+          Math.hypot(
+            lineVx,
+            lineVy
+          ) >
+          0.01;
+
+        const contactKey =
+          ballLineContactKey(
+            ball,
+            line
+          );
+
+        /* Once this exact contact becomes a dense HOLD, stop repeatedly
+           bouncing along its normal. Preserve tangential motion only. */
+        const contactHolding =
+          isContactHolding(contactKey);
+
+        if (
+          contactHolding &&
+          !ball.frozen &&
+          !ball.isDragging
+        ) {
+          const normalVelocity =
+            ball.vx * nx +
+            ball.vy * ny;
+
+          if (normalVelocity < 0 || lineIsMoving) {
+            ball.vx -= normalVelocity * nx;
+            ball.vy -= normalVelocity * ny;
+          }
+
+          const world = getWorldSize();
+          triggerEvent(
+            "line",
+            ball.x / world.width,
+            contactKey
+          );
+
+          return;
+        }
+
+
+        if (
+          (!ball.frozen || ball.isDragging) &&
+          (relativeVelocity < 0 || lineIsMoving)
+        ) {
+
+          if (
+            relativeVelocity < 0
+          ) {
+
+            if (movementMode === "bounce" && !lineIsMoving) {
+              /* Same JUMP POWER on LINE as on WALL / FLOOR / CEILING.
+                 Keep tangential inertia; replace only the normal speed. */
+              const jumpPower = getBounceJumpVelocity();
+              const normalSpeed = ball.vx * nx + ball.vy * ny;
+              const tangentVx = ball.vx - normalSpeed * nx;
+              const tangentVy = ball.vy - normalSpeed * ny;
+              const rebound = jumpPower > 0 ? jumpPower : Math.abs(normalSpeed);
+              ball.vx = tangentVx + nx * rebound;
+              ball.vy = tangentVy + ny * rebound;
+            }
+            else {
+              const surfaceRestitution = 0.96;
+              ball.vx -=
+                (1 + surfaceRestitution) *
+                relativeVelocity *
+                nx;
+              ball.vy -=
+                (1 + surfaceRestitution) *
+                relativeVelocity *
+                ny;
+            }
+
+          }
+
+
+
+
+          /*
+            STRAIGHTでも「投げた/叩いた」勢いを
+            すぐ固定速度へ戻さない。
+          */
+
+
+          const world =
+            getWorldSize();
+
+
+          triggerEvent(
+            "line",
+            ball.x /
+            world.width,
+            contactKey
+          );
+
+        }
+
+
+        return;
+
+      }
+
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   BALLS
+========================================================= */
+
+const balls = [];
+
+const ballElements = [];
+
+let activeGrabGroup = [];
+let activeGrabLeader = null;
+let activeGrabPointerId = null;
+
+
+const velocityControl =
+  document.getElementById(
+    "ballVelocity"
+  );
+
+const countControl =
+  document.getElementById(
+    "ballCount"
+  );
+
+
+function baseBallSize() {
+
+  return 64;
+
+}
+
+
+/* =========================================================
+   MOVEMENT MODE
+========================================================= */
+
+let worldStopped = false;
+
+let movementMode =
+  "straight";
+
+
+const straightModeButton =
+  document.getElementById(
+    "straightMode"
+  );
+
+const bounceModeButton =
+  document.getElementById(
+    "bounceMode"
+  );
+
+
+
+const motionParameterLabel =
+  document.getElementById(
+    "motionParameterLabel"
+  );
+
+const frictionSlider =
+  document.getElementById(
+    "frictionSlider"
+  );
+
+
+function updateMotionParameterLabel() {
+  if (movementMode === "bounce") {
+    motionParameterLabel.textContent = "hopping";
+  }
+  else {
+    motionParameterLabel.textContent = "speed";
+  }
+}
+
+function getFrictionAmount() {
+  return Math.max(0, Math.min(1, parseFloat(frictionSlider.value) || 0));
+}
+
+function getFrictionDamping() {
+  const friction = getFrictionAmount();
+
+  /*
+    0.00 = almost no drag
+    1.00 = strong drag
+    This deliberately has a wide range so the control is audible/visible.
+  */
+  return 0.9995 - friction * 0.0995;
+}
+
+
+function setMovementMode(
+  mode
+) {
+
+  movementMode =
+    mode;
+
+  updateMotionParameterLabel();
+
+
+  straightModeButton
+    .classList
+    .toggle(
+      "active",
+      mode ===
+      "straight"
+    );
+
+  bounceModeButton
+    .classList
+    .toggle(
+      "active",
+      mode ===
+      "bounce"
+    );
+
+
+  const speed =
+    parseFloat(
+      velocityControl.value
+    );
+
+
+  for (
+    const ball of balls
+  ) {
+
+    if (ball.frozen) {
+      continue;
+    }
+
+    if (mode === "bounce") {
+      /*
+        Keep the horizontal inertia from STRAIGHT / THROW.
+        Only the vertical component is handed over to gravity.
+        A newly added BOUNCE ball still starts with vx = 0.
+      */
+      ball.vy = 0;
+    }
+
+    else if (mode === "straight") {
+      const baseSpeed =
+        parseFloat(velocityControl.value);
+
+      if (Math.hypot(ball.vx, ball.vy) < STOP_EPSILON && baseSpeed > 0) {
+        const angle = Math.random() * Math.PI * 2;
+        ball.vx = Math.cos(angle) * baseSpeed;
+        ball.vy = Math.sin(angle) * baseSpeed;
+      }
+    }
+
+  }
+
+}
+
+
+straightModeButton
+  .addEventListener(
+    "click",
+    () => {
+
+      setMovementMode(
+        "straight"
+      );
+
+    }
+  );
+
+
+bounceModeButton
+  .addEventListener(
+    "click",
+    () => {
+
+      setMovementMode(
+        "bounce"
+      );
+
+    }
+  );
+
+
+
+
+/* =========================================================
+   STRAIGHT VELOCITY
+========================================================= */
+
+function normalizeStraightVelocity(
+  ball
+) {
+
+  if (
+    movementMode !==
+    "straight"
+  ) {
+
+    return;
+
+  }
+
+
+  const baseSpeed =
+    parseFloat(
+      velocityControl.value
+    );
+
+
+  const currentSpeed =
+    Math.hypot(
+      ball.vx,
+      ball.vy
+    );
+
+
+  /*
+    BALL SPEED = 0:
+    no self propulsion. Throw/collision momentum remains,
+    then slowly dies away like a curling / billiard ball.
+  */
+  if (
+    baseSpeed <=
+    0.0001
+  ) {
+
+    return;
+
+  }
+
+
+  /*
+    When nearly stopped while BALL SPEED is above zero,
+    restore the normal straight-motion speed.
+    Do NOT clamp faster collision/throw momentum here.
+  */
+  if (
+    currentSpeed <
+    0.0001
+  ) {
+
+    const angle =
+      Math.random() *
+      Math.PI *
+      2;
+
+    ball.vx =
+      Math.cos(angle) *
+      baseSpeed;
+
+    ball.vy =
+      Math.sin(angle) *
+      baseSpeed;
+
+  }
+
+}
+
+
+/* =========================================================
+   STRAIGHT FRICTION / MOMENTUM
+========================================================= */
+
+const STOP_EPSILON =
+  0.012;
+
+
+function applyStraightMomentum(
+  ball
+) {
+
+  if (
+    ball.isDragging ||
+    ball.frozen ||
+    ball.stoppedByStop
+  ) {
+
+    return;
+
+  }
+
+
+  const baseSpeed =
+    parseFloat(
+      velocityControl.value
+    );
+
+  const speed =
+    Math.hypot(
+      ball.vx,
+      ball.vy
+    );
+
+
+  if (
+    speed <
+    STOP_EPSILON
+  ) {
+
+    if (
+      baseSpeed <=
+      0.0001
+    ) {
+
+      ball.vx = 0;
+      ball.vy = 0;
+
+    }
+
+    else {
+
+      /* preserve the last direction if possible */
+      const angle =
+        Number.isFinite(ball.lastMotionAngle)
+          ? ball.lastMotionAngle
+          : Math.random() * Math.PI * 2;
+
+      ball.vx =
+        Math.cos(angle) *
+        baseSpeed;
+
+      ball.vy =
+        Math.sin(angle) *
+        baseSpeed;
+
+    }
+
+    return;
+
+  }
+
+
+  ball.lastMotionAngle =
+    Math.atan2(
+      ball.vy,
+      ball.vx
+    );
+
+
+  /*
+    Momentum above the BALL SPEED setting gradually decays.
+    At BALL SPEED 0 everything eventually comes to rest.
+  */
+  if (
+    baseSpeed <=
+    0.0001 ||
+    speed >
+    baseSpeed
+  ) {
+
+    const damping = getFrictionDamping();
+
+    ball.vx *=
+      damping;
+
+    ball.vy *=
+      damping;
+
+  }
+
+  else if (
+    speed <
+    baseSpeed *
+    0.985
+  ) {
+
+    /*
+      When ordinary straight mode is active, gently return
+      slower balls to the chosen base speed rather than
+      snapping instantly.
+    */
+    const targetScale =
+      baseSpeed /
+      speed;
+
+    const scale =
+      1 +
+      (targetScale - 1) *
+      0.025;
+
+    ball.vx *= scale;
+    ball.vy *= scale;
+
+  }
+
+}
+
+
+/* =========================================================
+   CREATE BALL
+========================================================= */
+
+function createBall(
+  index,
+  startX = null,
+  startY = null
+) {
+
+  const element =
+    document.createElement(
+      "div"
+    );
+
+  element.className =
+    "ball";
+
+  element.dataset.index =
+    index;
+
+  const grabHitTarget =
+    document.createElement(
+      "span"
+    );
+
+  grabHitTarget.className =
+    "ballGrabTarget";
+
+  element.appendChild(
+    grabHitTarget
+  );
+
+  document.body.appendChild(
+    element
+  );
+
+
+  const world =
+    getWorldSize();
+
+  const size =
+    baseBallSize();
+
+  const speed =
+    parseFloat(
+      velocityControl.value
+    );
+
+  const angle =
+    Math.random() *
+    Math.PI *
+    2;
+
+
+  const ball = {
+
+    element,
+
+    x:
+      startX !== null
+        ? startX
+        : Math.random() * Math.max(1, world.width - size),
+
+    y:
+      startY !== null
+        ? startY
+        : Math.random() * Math.max(1, world.height - size),
+
+    vx:
+      movementMode === "straight"
+        ? Math.cos(angle) * speed
+        : 0,
+
+    vy:
+      movementMode === "straight"
+        ? Math.sin(angle) * speed
+        : 0,
+
+    gravity:
+      0.025,
+
+    lastMotionAngle:
+      angle,
+
+    size,
+
+    isDragging:
+      false,
+
+    dragLastX:
+      0,
+
+    dragLastY:
+      0,
+
+    dragLastTime:
+      0,
+
+    dragVx:
+      0,
+
+    dragVy:
+      0,
+
+    dragStartX:
+      0,
+
+    dragStartY:
+      0,
+
+    dragSamples:
+      [],
+
+    beginDrag:
+      null,
+
+    releaseDrag:
+      null,
+
+    dragPointerId:
+      null,
+
+    dragPointerOutside:
+      false,
+
+    preDragVx:
+      0,
+
+    preDragVy:
+      0,
+
+    frozen:
+      false,
+
+    stoppedByStop:
+      worldStopped,
+
+    preStopVx:
+      0,
+
+    preStopVy:
+      0
+
+  };
+
+
+  if (worldStopped) {
+    ball.preStopVx = ball.vx;
+    ball.preStopVy = ball.vy;
+    ball.vx = 0;
+    ball.vy = 0;
+  }
+
+
+  let ballWasDragged =
+    false;
+
+
+  function recordBallDragSample(x, y, time) {
+    ball.dragSamples.push({ x, y, time });
+
+    const cutoff = time - 120;
+
+    while (
+      ball.dragSamples.length > 2 &&
+      ball.dragSamples[1].time < cutoff
+    ) {
+      ball.dragSamples.shift();
+    }
+  }
+
+
+  function getRecentBallDragVelocity() {
+    if (ball.dragSamples.length < 2) {
+      return {
+        vx: ball.dragVx,
+        vy: ball.dragVy
+      };
+    }
+
+    const latest = ball.dragSamples[ball.dragSamples.length - 1];
+    let earliest = ball.dragSamples[0];
+
+    for (const sample of ball.dragSamples) {
+      if (latest.time - sample.time <= 120) {
+        earliest = sample;
+        break;
+      }
+    }
+
+    const dt = Math.max(1, latest.time - earliest.time);
+
+    return {
+      vx: ((latest.x - earliest.x) / spaceZoom) * (16.667 / dt),
+      vy: ((latest.y - earliest.y) / spaceZoom) * (16.667 / dt)
+    };
+  }
+
+
+  function beginBallDrag(e, requestedGroup = [ball]) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    initAudio();
+
+    activeGrabLeader = ball;
+    activeGrabPointerId = e.pointerId;
+    activeGrabGroup = requestedGroup.length > 0
+      ? requestedGroup
+      : [ball];
+    ballWasDragged = false;
+
+    const dragStartedAt = performance.now();
+
+    for (const grabbedBall of activeGrabGroup) {
+      grabbedBall.isDragging = true;
+      grabbedBall.preDragVx = grabbedBall.vx;
+      grabbedBall.preDragVy = grabbedBall.vy;
+      grabbedBall.dragStartX = e.clientX;
+      grabbedBall.dragStartY = e.clientY;
+      grabbedBall.dragLastX = e.clientX;
+      grabbedBall.dragLastY = e.clientY;
+      grabbedBall.dragLastTime = dragStartedAt;
+      grabbedBall.dragPointerId = e.pointerId;
+      grabbedBall.dragPointerOutside = false;
+      grabbedBall.dragVx = 0;
+      grabbedBall.dragVy = 0;
+      grabbedBall.vx = 0;
+      grabbedBall.vy = 0;
+    }
+
+    ball.dragSamples = [];
+    recordBallDragSample(
+      e.clientX,
+      e.clientY,
+      dragStartedAt
+    );
+
+    element.setPointerCapture(e.pointerId);
+  }
+
+
+  ball.beginDrag = beginBallDrag;
+
+
+  element.addEventListener(
+    "pointerdown",
+    e => {
+
+      if (
+        e.button !== 0
+      ) {
+
+        return;
+
+      }
+
+
+      e.preventDefault();
+
+      e.stopPropagation();
+
+      initAudio();
+
+      if (drawingTool === "freeze") {
+        ball.frozen = !ball.frozen;
+        ball.vx = 0;
+        ball.vy = 0;
+        ball.stoppedByStop = false;
+        return;
+      }
+
+      if (drawingTool === "removeBall") {
+        const ballIndex = balls.indexOf(ball);
+        if (ballIndex >= 0) balls.splice(ballIndex, 1);
+        const elementIndex = ballElements.indexOf(element);
+        if (elementIndex >= 0) ballElements.splice(elementIndex, 1);
+        element.remove();
+        countControl.value = balls.length;
+        return;
+      }
+
+      if (drawingTool === "addBall") {
+        return;
+      }
+
+      /* GRAB is handled as an area attraction force in capture phase. */
+      return;
+
+    }
+  );
+
+
+  element.addEventListener(
+    "pointermove",
+    e => {
+
+      if (
+        !ball.isDragging
+      ) {
+
+        return;
+
+      }
+
+      if (e.pointerId !== ball.dragPointerId) return;
+
+      if (
+        e.pointerType === "mouse" &&
+        e.buttons === 0
+      ) {
+        releaseThrownBall(e, false);
+        return;
+      }
+
+      const pointerIsOutside =
+        e.clientX < 0 ||
+        e.clientX > window.innerWidth ||
+        e.clientY < 0 ||
+        e.clientY > window.innerHeight;
+
+      if (
+        !pointerIsOutside &&
+        ball.dragPointerOutside
+      ) {
+        const reentryTime = performance.now();
+
+        for (const grabbedBall of activeGrabGroup) {
+          grabbedBall.dragLastX = e.clientX;
+          grabbedBall.dragLastY = e.clientY;
+          grabbedBall.dragLastTime = reentryTime;
+          grabbedBall.dragPointerOutside = false;
+        }
+
+        ball.dragSamples = [];
+        recordBallDragSample(
+          e.clientX,
+          e.clientY,
+          reentryTime
+        );
+        return;
+      }
+
+      if (pointerIsOutside) {
+        for (const grabbedBall of activeGrabGroup) {
+          grabbedBall.dragPointerOutside = true;
+        }
+      }
+
+
+      const now =
+        performance.now();
+
+
+      recordBallDragSample(
+        e.clientX,
+        e.clientY,
+        now
+      );
+
+
+      const dx =
+        e.clientX -
+        ball.dragLastX;
+
+      const dy =
+        e.clientY -
+        ball.dragLastY;
+
+
+      if (
+        Math.hypot(
+          dx,
+          dy
+        ) >
+        1
+      ) {
+
+        ballWasDragged =
+          true;
+
+      }
+
+
+      const dt =
+        Math.max(
+          1,
+          now -
+          ball.dragLastTime
+        );
+
+      const grabbedBalls =
+        activeGrabLeader === ball
+          ? activeGrabGroup
+          : [ball];
+
+
+      /*
+        Calculate hand velocity before collision solving so
+        pushed balls receive the current drag motion.
+      */
+      const currentDragVx =
+        (
+          dx /
+          spaceZoom
+        ) *
+        (
+          16.667 /
+          dt
+        );
+
+
+      const currentDragVy =
+        (
+          dy /
+          spaceZoom
+        ) *
+        (
+          16.667 /
+          dt
+        );
+
+
+      /*
+        Lightweight CCD: sweep the held circle from its current position
+        to the pointer target. No 2px loops, so dragging stays responsive.
+      */
+      const moveWorldX = dx / spaceZoom;
+      const moveWorldY = dy / spaceZoom;
+      let allowedT = 1;
+
+      for (const grabbedBall of grabbedBalls) {
+        grabbedBall.dragVx = currentDragVx;
+        grabbedBall.dragVy = currentDragVy;
+
+        const sweptHit = findSweptBallDragHit(
+          grabbedBall,
+          moveWorldX,
+          moveWorldY
+        );
+
+        if (!sweptHit) continue;
+
+        allowedT = Math.min(
+          allowedT,
+          Math.max(0, sweptHit.t - 0.0005)
+        );
+
+        if (sweptHit.type === "ball") {
+          applyDraggedImpactToBall(
+            sweptHit.other,
+            sweptHit.nx,
+            sweptHit.ny,
+            currentDragVx,
+            currentDragVy
+          );
+
+          if (ballCollisionCooldown <= 0) {
+            const world = getWorldSize();
+            triggerEvent(
+              "ball",
+              ((grabbedBall.x + sweptHit.other.x) / 2) / world.width,
+              ballBallContactKey(grabbedBall, sweptHit.other)
+            );
+            ballCollisionCooldown = 8;
+          }
+        }
+      }
+
+      for (const grabbedBall of grabbedBalls) {
+        grabbedBall.x += moveWorldX * allowedT;
+        grabbedBall.y += moveWorldY * allowedT;
+        clampBall(grabbedBall);
+        checkLineCollision(grabbedBall);
+
+        grabbedBall.dragLastX = e.clientX;
+        grabbedBall.dragLastY = e.clientY;
+        grabbedBall.dragLastTime = now;
+      }
+
+      /* One compact solver pass is enough after the swept test. */
+      checkBallCollisions();
+      clampAllBalls();
+
+    }
+  );
+
+
+  function releaseThrownBall(
+    e,
+    includeEventPoint = true
+  ) {
+
+    if (
+      !ball.isDragging
+    ) {
+
+      return;
+
+    }
+
+
+    const grabbedBalls =
+      activeGrabLeader === ball
+        ? activeGrabGroup
+        : [ball];
+
+    for (const grabbedBall of grabbedBalls) {
+      grabbedBall.isDragging = false;
+    }
+
+    const releaseTime = performance.now();
+
+    if (
+      includeEventPoint &&
+      e &&
+      Number.isFinite(e.clientX) &&
+      Number.isFinite(e.clientY) &&
+      Math.hypot(
+        e.clientX - ball.dragStartX,
+        e.clientY - ball.dragStartY
+      ) > 1
+    ) {
+      ballWasDragged = true;
+    }
+
+    if (
+      includeEventPoint &&
+      e &&
+      Number.isFinite(e.clientX) &&
+      Number.isFinite(e.clientY)
+    ) {
+      recordBallDragSample(
+        e.clientX,
+        e.clientY,
+        releaseTime
+      );
+    }
+
+    if (
+      ballWasDragged
+    ) {
+
+      /*
+        離した瞬間の方向・速度を
+        そのままボールへ渡す。
+      */
+
+      /*
+        THROW is intentionally damped: closer to the
+        feel of striking a billiard ball than flinging
+        an object at raw pointer speed.
+      */
+      const THROW_SCALE =
+        0.36;
+
+      const MAX_THROW_SPEED =
+        8.5;
+
+      const recentDragVelocity =
+        getRecentBallDragVelocity();
+
+      let throwVx =
+        recentDragVelocity.vx *
+        THROW_SCALE;
+
+      let throwVy =
+        recentDragVelocity.vy *
+        THROW_SCALE;
+
+      const throwSpeed =
+        Math.hypot(
+          throwVx,
+          throwVy
+        );
+
+      if (
+        throwSpeed >
+        MAX_THROW_SPEED
+      ) {
+
+        const scale =
+          MAX_THROW_SPEED /
+          throwSpeed;
+
+        throwVx *=
+          scale;
+
+        throwVy *=
+          scale;
+
+      }
+
+      for (const grabbedBall of grabbedBalls) {
+        if (grabbedBall.frozen) {
+          grabbedBall.vx = 0;
+          grabbedBall.vy = 0;
+          continue;
+        }
+
+        if (worldStopped) {
+          grabbedBall.preStopVx = throwVx;
+          grabbedBall.preStopVy = throwVy;
+          grabbedBall.vx = 0;
+          grabbedBall.vy = 0;
+          grabbedBall.stoppedByStop = true;
+        }
+        else {
+          grabbedBall.vx = throwVx;
+          grabbedBall.vy = throwVy;
+          grabbedBall.stoppedByStop = false;
+        }
+      }
+
+    }
+
+    else {
+
+      /*
+        ただクリックしただけなら
+        元の運動を維持し、従来のクリック音。
+      */
+
+      for (const grabbedBall of grabbedBalls) {
+        grabbedBall.vx = grabbedBall.frozen
+          ? 0
+          : grabbedBall.preDragVx;
+
+        grabbedBall.vy = grabbedBall.frozen
+          ? 0
+          : grabbedBall.preDragVy;
+      }
+
+
+      if (
+        index === 0
+      ) {
+
+        playMaleGrowl();
+
+      }
+
+      else {
+
+        sayFreeMusic();
+
+      }
+
+    }
+
+
+    for (const grabbedBall of grabbedBalls) {
+      grabbedBall.dragVx = 0;
+      grabbedBall.dragVy = 0;
+      grabbedBall.dragPointerId = null;
+      grabbedBall.dragPointerOutside = false;
+    }
+
+    activeGrabGroup = [];
+    activeGrabLeader = null;
+    activeGrabPointerId = null;
+
+
+    if (e) e.stopPropagation();
+
+  }
+
+
+  ball.releaseDrag = releaseThrownBall;
+
+
+  element.addEventListener(
+    "pointerup",
+    releaseThrownBall
+  );
+
+
+  element.addEventListener(
+    "pointercancel",
+    e => releaseThrownBall(e, false)
+  );
+
+  element.addEventListener(
+    "lostpointercapture",
+    e => releaseThrownBall(e, false)
+  );
+
+
+  ballElements.push(
+    element
+  );
+
+  balls.push(
+    ball
+  );
+
+  /* keep the current tool cursor on newly created balls */
+  setTool(drawingTool);
+
+}
+
+
+window.addEventListener("pointerup", e => {
+  if (
+    !activeGrabLeader ||
+    e.pointerId !== activeGrabPointerId ||
+    typeof activeGrabLeader.releaseDrag !== "function"
+  ) {
+    return;
+  }
+
+  activeGrabLeader.releaseDrag(e, true);
+}, true);
+
+window.addEventListener("pointercancel", e => {
+  if (
+    !activeGrabLeader ||
+    e.pointerId !== activeGrabPointerId ||
+    typeof activeGrabLeader.releaseDrag !== "function"
+  ) {
+    return;
+  }
+
+  activeGrabLeader.releaseDrag(e, false);
+}, true);
+
+window.addEventListener("blur", () => {
+  if (
+    activeGrabLeader &&
+    typeof activeGrabLeader.releaseDrag === "function"
+  ) {
+    activeGrabLeader.releaseDrag(null, false);
+  }
+});
+
+
+/* =========================================================
+   BALL COUNT
+========================================================= */
+
+function syncBallCount() {
+
+  const wanted =
+    parseInt(
+      countControl.value
+    );
+
+
+  while (
+    balls.length <
+    wanted
+  ) {
+
+    createBall(
+      balls.length
+    );
+
+  }
+
+
+  while (
+    balls.length >
+    wanted
+  ) {
+
+    const ball =
+      balls.pop();
+
+    if (
+      ball.element
+    ) {
+
+      ball.element.remove();
+
+    }
+
+    ballElements.pop();
+
+  }
+
+
+  clampAllBalls();
+
+}
+
+
+countControl.addEventListener(
+  "input",
+  syncBallCount
+);
+
+
+/* =========================================================
+   SPEED CONTROL
+========================================================= */
+
+velocityControl.addEventListener(
+  "input",
+  () => {
+
+    if (
+      movementMode !==
+      "straight"
+    ) {
+
+      return;
+
+    }
+
+
+    const baseSpeed =
+      parseFloat(
+        velocityControl.value
+      );
+
+
+    for (
+      const ball of balls
+    ) {
+
+      const speed =
+        Math.hypot(
+          ball.vx,
+          ball.vy
+        );
+
+
+      /*
+        Setting BALL SPEED to zero does not erase momentum.
+        Existing throw/collision motion is allowed to coast.
+      */
+      if (
+        baseSpeed > 0 &&
+        speed < STOP_EPSILON
+      ) {
+
+        normalizeStraightVelocity(
+          ball
+        );
+
+      }
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   CLAMP
+========================================================= */
+
+function clampBall(
+  ball
+) {
+
+  const world =
+    getWorldSize();
+
+
+  const maxX =
+    Math.max(
+      0,
+      world.width -
+      ball.size
+    );
+
+  const maxY =
+    Math.max(
+      0,
+      world.height -
+      ball.size
+    );
+
+
+  ball.x =
+    Math.max(
+      0,
+      Math.min(
+        maxX,
+        ball.x
+      )
+    );
+
+  ball.y =
+    Math.max(
+      0,
+      Math.min(
+        maxY,
+        ball.y
+      )
+    );
+
+}
+
+
+function clampAllBalls() {
+
+  for (
+    const ball of balls
+  ) {
+
+    clampBall(
+      ball
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   BALL COLLISIONS
+========================================================= */
+
+let ballCollisionCooldown =
+  0;
+
+
+function checkBallCollisions() {
+
+  for (
+    let i = 0;
+    i < balls.length;
+    i++
+  ) {
+
+    for (
+      let j = i + 1;
+      j < balls.length;
+      j++
+    ) {
+
+      const a =
+        balls[i];
+
+      const b =
+        balls[j];
+
+
+      const radiusA =
+        a.size /
+        2;
+
+      const radiusB =
+        b.size /
+        2;
+
+
+      const ax =
+        a.x +
+        radiusA;
+
+      const ay =
+        a.y +
+        radiusA;
+
+      const bx =
+        b.x +
+        radiusB;
+
+      const by =
+        b.y +
+        radiusB;
+
+
+      const dx =
+        bx -
+        ax;
+
+      const dy =
+        by -
+        ay;
+
+
+      const minDistance =
+        radiusA +
+        radiusB;
+
+      const distanceSq =
+        dx *
+        dx +
+        dy *
+        dy;
+
+      if (
+        distanceSq >=
+        minDistance *
+        minDistance
+      ) {
+
+        continue;
+
+      }
+
+      const distance =
+        Math.sqrt(
+          distanceSq
+        );
+
+      const safe =
+        Math.max(
+          distance,
+          0.001
+        );
+
+      const nx =
+        dx /
+        safe;
+
+      const ny =
+        dy /
+        safe;
+
+
+      const overlap =
+        minDistance -
+        safe;
+
+
+      /*
+        Separate circles to exact tangency.
+        If one ball is held, keep it under the hand and
+        push the other ball the full penetration distance.
+      */
+      const aStatic =
+        a.isDragging || a.frozen;
+
+      const bStatic =
+        b.isDragging || b.frozen;
+
+      if (aStatic && !bStatic) {
+        b.x += nx * (overlap + 0.001);
+        b.y += ny * (overlap + 0.001);
+      }
+
+      else if (bStatic && !aStatic) {
+        a.x -= nx * (overlap + 0.001);
+        a.y -= ny * (overlap + 0.001);
+      }
+
+      else if (!aStatic && !bStatic) {
+        a.x -= nx * overlap * 0.5;
+        a.y -= ny * overlap * 0.5;
+        b.x += nx * overlap * 0.5;
+        b.y += ny * overlap * 0.5;
+      }
+
+      clampBall(a);
+      clampBall(b);
+
+
+      /* Dragged line and dragged ball use exactly the same hand-force scale. */
+      const aVx =
+        a.isDragging ? a.dragVx * DRAG_CONTACT_SCALE : (a.frozen ? 0 : a.vx);
+
+      const aVy =
+        a.isDragging ? a.dragVy * DRAG_CONTACT_SCALE : (a.frozen ? 0 : a.vy);
+
+      const bVx =
+        b.isDragging ? b.dragVx * DRAG_CONTACT_SCALE : (b.frozen ? 0 : b.vx);
+
+      const bVy =
+        b.isDragging ? b.dragVy * DRAG_CONTACT_SCALE : (b.frozen ? 0 : b.vy);
+
+      const rvx =
+        bVx -
+        aVx;
+
+      const rvy =
+        bVy -
+        aVy;
+
+
+      const relativeVelocity =
+        rvx *
+        nx +
+        rvy *
+        ny;
+
+      const ballContactKey =
+        ballBallContactKey(a, b);
+
+      if (
+        isContactHolding(ballContactKey) &&
+        relativeVelocity < 0
+      ) {
+        if (!aStatic && !bStatic) {
+          const avgNormal = (
+            (a.vx * nx + a.vy * ny) +
+            (b.vx * nx + b.vy * ny)
+          ) * 0.5;
+          const aNormal = a.vx * nx + a.vy * ny;
+          const bNormal = b.vx * nx + b.vy * ny;
+          a.vx += (avgNormal - aNormal) * nx;
+          a.vy += (avgNormal - aNormal) * ny;
+          b.vx += (avgNormal - bNormal) * nx;
+          b.vy += (avgNormal - bNormal) * ny;
+        }
+
+        const world = getWorldSize();
+        triggerEvent(
+          "ball",
+          ((a.x + b.x) / 2) / world.width,
+          ballContactKey
+        );
+        continue;
+      }
+
+
+      if (
+        relativeVelocity <
+        0
+      ) {
+
+        const restitution =
+          0.96;
+
+        const invMassA =
+          aStatic ? 0 : 1;
+
+        const invMassB =
+          bStatic ? 0 : 1;
+
+        const invMassSum =
+          invMassA + invMassB;
+
+        if (invMassSum <= 0) {
+          continue;
+        }
+
+        const impulse =
+          -(1 + restitution) *
+          relativeVelocity /
+          invMassSum;
+
+
+        if (!aStatic) {
+          a.vx -= impulse * nx * invMassA;
+          a.vy -= impulse * ny * invMassA;
+          a.stoppedByStop = false;
+        }
+
+        if (!bStatic) {
+          b.vx += impulse * nx * invMassB;
+          b.vy += impulse * ny * invMassB;
+          b.stoppedByStop = false;
+        }
+
+
+
+        if (
+          ballCollisionCooldown <=
+          0
+        ) {
+
+          const world =
+            getWorldSize();
+
+
+          triggerEvent(
+            "ball",
+            (
+              (
+                a.x +
+                b.x
+              ) /
+              2
+            ) /
+            world.width,
+            ballContactKey
+          );
+
+
+          ballCollisionCooldown =
+            8;
+
+        }
+
+      }
+
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   SURFACE
+========================================================= */
+
+function surfaceHit(
+  ball,
+  position,
+  surfaceName
+) {
+
+  const contactKey =
+    ballSurfaceContactKey(
+      ball,
+      surfaceName
+    );
+
+  triggerEvent(
+    "surface",
+    position,
+    contactKey
+  );
+
+  return contactKey;
+
+}
+
+function stabilizeHeldSurfaceContact(
+  ball,
+  surfaceName
+) {
+  const key = ballSurfaceContactKey(ball, surfaceName);
+  if (!isContactHolding(key) || ball.frozen || ball.isDragging) return false;
+
+  if (surfaceName === "left" && ball.vx < 0) ball.vx = 0;
+  if (surfaceName === "right" && ball.vx > 0) ball.vx = 0;
+  if (surfaceName === "top" && ball.vy < 0) ball.vy = 0;
+  if (surfaceName === "bottom" && ball.vy > 0) ball.vy = 0;
+  return true;
+}
+
+
+/* =========================================================
+   STRAIGHT PHYSICS
+========================================================= */
+
+function updateStraightBall(
+  ball,
+  world
+) {
+
+  applyStraightMomentum(
+    ball
+  );
+
+
+  ball.x +=
+    ball.vx;
+
+  ball.y +=
+    ball.vy;
+
+
+  /* LEFT */
+
+  if (
+    ball.x <= 0
+  ) {
+
+    ball.x = 0;
+
+    if (!stabilizeHeldSurfaceContact(ball, "left")) {
+      ball.vx =
+        Math.abs(
+          ball.vx
+        );
+    }
+
+    surfaceHit(
+      ball,
+      0,
+      "left"
+    );
+
+  }
+
+
+  /* RIGHT */
+
+  if (
+    ball.x +
+    ball.size >=
+    world.width
+  ) {
+
+    ball.x =
+      world.width -
+      ball.size;
+
+    if (!stabilizeHeldSurfaceContact(ball, "right")) {
+      ball.vx =
+        -Math.abs(
+          ball.vx
+        );
+    }
+
+    surfaceHit(
+      ball,
+      1,
+      "right"
+    );
+
+  }
+
+
+  /* TOP */
+
+  if (
+    ball.y <= 0
+  ) {
+
+    ball.y = 0;
+
+    if (!stabilizeHeldSurfaceContact(ball, "top")) {
+      ball.vy =
+        Math.abs(
+          ball.vy
+        );
+    }
+
+    surfaceHit(
+      ball,
+      ball.x /
+      world.width,
+      "top"
+    );
+
+  }
+
+
+  /* BOTTOM */
+
+  if (
+    ball.y +
+    ball.size >=
+    world.height
+  ) {
+
+    ball.y =
+      world.height -
+      ball.size;
+
+    if (!stabilizeHeldSurfaceContact(ball, "bottom")) {
+      ball.vy =
+        -Math.abs(
+          ball.vy
+        );
+    }
+
+    surfaceHit(
+      ball,
+      ball.x /
+      world.width,
+      "bottom"
+    );
+
+  }
+
+
+}
+
+
+/* =========================================================
+   BOUNCE PHYSICS
+========================================================= */
+
+function getBounceJumpVelocity() {
+  /*
+    In BOUNCE mode the same slider becomes JUMP POWER.
+    A value of 5 means each clean floor bounce is relaunched
+    with vertical speed 5, so the bounce height does not decay.
+  */
+  return Math.max(
+    0,
+    parseFloat(velocityControl.value)
+  );
+}
+
+
+function updateBounceBall(
+  ball,
+  world
+) {
+
+  if (ball.frozen || ball.stoppedByStop) {
+    return;
+  }
+
+  const jumpPower =
+    getBounceJumpVelocity();
+
+  /*
+    BOUNCE itself never invents horizontal movement.
+    vx exists only when it was inherited from STRAIGHT,
+    or created later by THROW / ball collision / line / wall contact.
+  */
+  if (Math.abs(ball.vx) < STOP_EPSILON) {
+    ball.vx = 0;
+  }
+
+  const moving =
+    Math.hypot(ball.vx, ball.vy) > STOP_EPSILON;
+
+  /*
+    With JUMP POWER above zero, gravity always acts so a newly
+    placed ball falls straight down. At zero, external motion can
+    still wake the ball and gravity then acts while it is moving.
+  */
+  if (!gravityActive && (jumpPower > 0 || moving)) {
+    ball.vy += ball.gravity;
+  }
+
+  const damping = getFrictionDamping();
+
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+
+  if (Math.abs(ball.vx) > STOP_EPSILON) {
+    ball.vx *= damping;
+    if (Math.abs(ball.vx) < STOP_EPSILON) ball.vx = 0;
+  }
+
+  if (jumpPower <= 0 && Math.abs(ball.vy) > STOP_EPSILON) {
+    ball.vy *= damping;
+    if (Math.abs(ball.vy) < STOP_EPSILON) ball.vy = 0;
+  }
+
+  /* JUMP POWER is the normal rebound strength on every fixed surface.
+     Tangential inertia is left untouched. */
+  if (ball.x <= 0) {
+    ball.x = 0;
+    if (ball.vx < 0) {
+      if (!stabilizeHeldSurfaceContact(ball, "left")) {
+        ball.vx = jumpPower > 0 ? jumpPower : Math.abs(ball.vx);
+      }
+      surfaceHit(ball, 0, "left");
+    }
+  }
+
+  if (ball.x + ball.size >= world.width) {
+    ball.x = world.width - ball.size;
+    if (ball.vx > 0) {
+      if (!stabilizeHeldSurfaceContact(ball, "right")) {
+        ball.vx = jumpPower > 0 ? -jumpPower : -Math.abs(ball.vx);
+      }
+      surfaceHit(ball, 1, "right");
+    }
+  }
+
+  if (ball.y <= 0) {
+    ball.y = 0;
+    if (ball.vy < 0) {
+      if (!stabilizeHeldSurfaceContact(ball, "top")) {
+        ball.vy = jumpPower > 0 ? jumpPower : Math.abs(ball.vy);
+      }
+      surfaceHit(ball, ball.x / world.width, "top");
+    }
+  }
+
+  if (ball.y + ball.size >= world.height) {
+    ball.y = world.height - ball.size;
+    if (ball.vy > 0) {
+      if (!stabilizeHeldSurfaceContact(ball, "bottom")) {
+        ball.vy = jumpPower > 0 ? -jumpPower : -Math.abs(ball.vy);
+      }
+      surfaceHit(ball, ball.x / world.width, "bottom");
+    }
+  }
+
+}
+
+
+/* =========================================================
+   ZERO-G PHYSICS
+========================================================= */
+
+function updateZeroGBall(
+  ball,
+  world
+) {
+
+  if (ball.frozen || ball.stoppedByStop) {
+    return;
+  }
+
+  const friction = 0.996;
+
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+
+  ball.vx *= friction;
+  ball.vy *= friction;
+
+  if (Math.abs(ball.vx) < STOP_EPSILON) ball.vx = 0;
+  if (Math.abs(ball.vy) < STOP_EPSILON) ball.vy = 0;
+
+  if (ball.x <= 0) {
+    ball.x = 0;
+    if (!stabilizeHeldSurfaceContact(ball, "left")) {
+      ball.vx = Math.abs(ball.vx) * 0.98;
+    }
+    surfaceHit(ball, 0, "left");
+  }
+
+  if (ball.x + ball.size >= world.width) {
+    ball.x = world.width - ball.size;
+    if (!stabilizeHeldSurfaceContact(ball, "right")) {
+      ball.vx = -Math.abs(ball.vx) * 0.98;
+    }
+    surfaceHit(ball, 1, "right");
+  }
+
+  if (ball.y <= 0) {
+    ball.y = 0;
+    if (!stabilizeHeldSurfaceContact(ball, "top")) {
+      ball.vy = Math.abs(ball.vy) * 0.98;
+    }
+    surfaceHit(ball, ball.x / world.width, "top");
+  }
+
+  if (ball.y + ball.size >= world.height) {
+    ball.y = world.height - ball.size;
+    if (!stabilizeHeldSurfaceContact(ball, "bottom")) {
+      ball.vy = -Math.abs(ball.vy) * 0.98;
+    }
+    surfaceHit(ball, ball.x / world.width, "bottom");
+  }
+
+}
+
+
+
+/* =========================================================
+   GRAVITY / GRAB / REPEL
+   Hold-only physical gestures.
+   desktop gravity: pointer displacement from press position
+   touch gravity: device tilt relative to press-time neutral
+========================================================= */
+
+const gravityButton = document.getElementById("gravityButton");
+const repelButton = document.getElementById("repelButton");
+
+let gravityActive = false;
+let gravityPointerId = null;
+let gravityStartX = 0;
+let gravityStartY = 0;
+let gravityPointerX = 0;
+let gravityPointerY = 0;
+let gravityUseTilt = false;
+let gravityNeutral = null;
+
+let repelActive = false;
+let repelPointerId = null;
+let repelPointerX = 0;
+let repelPointerY = 0;
+
+let grabActive = false;
+let grabPointerX = 0;
+let grabPointerY = 0;
+
+let latestOrientation = null;
+
+window.addEventListener("deviceorientation", e => {
+  if (!Number.isFinite(e.beta) || !Number.isFinite(e.gamma)) return;
+  latestOrientation = { beta: e.beta, gamma: e.gamma };
+  if (gravityActive && gravityUseTilt && !gravityNeutral) {
+    gravityNeutral = { beta: e.beta, gamma: e.gamma };
+  }
+});
+
+function clampUnit(value) {
+  return Math.max(-1, Math.min(1, value));
+}
+
+async function requestOrientationPermissionIfNeeded() {
+  try {
+    if (
+      typeof DeviceOrientationEvent !== "undefined" &&
+      typeof DeviceOrientationEvent.requestPermission === "function"
+    ) {
+      const result = await DeviceOrientationEvent.requestPermission();
+      return result === "granted";
+    }
+    return typeof DeviceOrientationEvent !== "undefined";
+  }
+  catch (error) {
+    return false;
+  }
+}
+
+function releaseGravity() {
+  gravityActive = false;
+  gravityPointerId = null;
+  gravityUseTilt = false;
+  gravityNeutral = null;
+  gravityButton.classList.remove("held");
+}
+
+function releaseRepel() {
+  repelActive = false;
+  repelPointerId = null;
+  repelButton.classList.remove("held");
+}
+
+function releaseGrabForce() {
+  grabActive = false;
+  grabTool.classList.remove("held");
+}
+
+
+/*
+  PC force tools:
+  select gravity, grab, or repel, then drag anywhere on the canvas/ball field.
+  Capture-phase listeners mean starting the drag directly on a ball also works.
+*/
+
+let forcePointerId = null;
+
+function isForceUI(target) {
+  return !!(
+    target.closest &&
+    (
+      target.closest("#controls") ||
+      target.closest("#openMenu") ||
+      target.closest("#confirmOverlay")
+    )
+  );
+}
+
+document.addEventListener("pointerdown", e => {
+  if (
+    drawingTool !== "gravity" &&
+    drawingTool !== "grab" &&
+    drawingTool !== "repel"
+  ) return;
+  if (e.pointerType === "mouse" && e.button !== 0) return;
+  if (isForceUI(e.target)) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  forcePointerId = e.pointerId;
+
+  if (drawingTool === "gravity") {
+    gravityActive = true;
+    gravityUseTilt = false;
+    gravityStartX = gravityPointerX = e.clientX;
+    gravityStartY = gravityPointerY = e.clientY;
+    gravityButton.classList.add("held");
+  }
+  else if (drawingTool === "repel") {
+    repelActive = true;
+    repelPointerX = e.clientX;
+    repelPointerY = e.clientY;
+    repelButton.classList.add("held");
+  }
+  else {
+    grabActive = true;
+    grabPointerX = e.clientX;
+    grabPointerY = e.clientY;
+    grabTool.classList.add("held");
+  }
+}, true);
+
+window.addEventListener("pointermove", e => {
+  if (e.pointerId !== forcePointerId) return;
+
+  if (gravityActive) {
+    gravityPointerX = e.clientX;
+    gravityPointerY = e.clientY;
+  }
+
+  if (repelActive) {
+    repelPointerX = e.clientX;
+    repelPointerY = e.clientY;
+  }
+
+  if (grabActive) {
+    grabPointerX = e.clientX;
+    grabPointerY = e.clientY;
+  }
+}, true);
+
+function endForceGesture(e) {
+  if (forcePointerId !== null && e && e.pointerId !== forcePointerId) return;
+
+  releaseGravity();
+  releaseGrabForce();
+  releaseRepel();
+  forcePointerId = null;
+}
+
+window.addEventListener("pointerup", endForceGesture, true);
+window.addEventListener("pointercancel", endForceGesture, true);
+window.addEventListener("blur", () => endForceGesture(null));
+
+const LOCAL_FORCE_DIAMETER = 280;
+
+function applyLocalRadialForce(pointerX, pointerY, direction) {
+  const centerX = pointerX / spaceZoom;
+  const centerY = pointerY / spaceZoom;
+  const radius = (LOCAL_FORCE_DIAMETER / 2) / spaceZoom;
+
+  for (const ball of balls) {
+    if (ball.frozen || ball.stoppedByStop || ball.isDragging) continue;
+
+    const bx = ball.x + ball.size / 2;
+    const by = ball.y + ball.size / 2;
+    let dx = bx - centerX;
+    let dy = by - centerY;
+    const distanceSq = dx * dx + dy * dy;
+    if (distanceSq >= radius * radius) continue;
+
+    let distance = Math.sqrt(distanceSq);
+
+    if (distance < 0.001) {
+      if (direction < 0) {
+        ball.vx *= 0.8;
+        ball.vy *= 0.8;
+        continue;
+      }
+
+      dx = 1;
+      dy = 0;
+      distance = 1;
+    }
+
+    const strength = (1 - distance / radius) * 1.35;
+
+    if (direction < 0) {
+      /* Let attracted balls settle around the cursor instead of orbiting it. */
+      ball.vx *= 0.94;
+      ball.vy *= 0.94;
+    }
+
+    ball.vx += direction * (dx / distance) * strength;
+    ball.vy += direction * (dy / distance) * strength;
+  }
+}
+
+function applyGestureForces() {
+  if (gravityActive) {
+    /*
+      Uniform gravity vector:
+      only drag direction + distance matter.
+      Cursor position relative to individual balls does NOT matter.
+    */
+    const dragX = gravityPointerX - gravityStartX;
+    const dragY = gravityPointerY - gravityStartY;
+    const dragLength = Math.hypot(dragX, dragY);
+
+    let directionX;
+    let directionY;
+    let force;
+
+    if (dragLength > 2) {
+      directionX = dragX / dragLength;
+      directionY = dragY / dragLength;
+
+      /* Longer drag = stronger gravity, capped. */
+      const magnitude = Math.min(1, dragLength / 140);
+      force = 0.34 * magnitude;
+    }
+    else {
+      /*
+        While holding without dragging, the clicked position defines
+        a uniform direction from the center of the viewport.
+      */
+      const centerDirectionX = gravityStartX - window.innerWidth / 2;
+      const centerDirectionY = gravityStartY - window.innerHeight / 2;
+      const centerDirectionLength = Math.hypot(
+        centerDirectionX,
+        centerDirectionY
+      );
+
+      if (centerDirectionLength < 0.001) {
+        directionX = 0;
+        directionY = 1;
+      }
+      else {
+        directionX = centerDirectionX / centerDirectionLength;
+        directionY = centerDirectionY / centerDirectionLength;
+      }
+
+      force = 0.34;
+    }
+
+    for (const ball of balls) {
+      if (ball.frozen || ball.stoppedByStop || ball.isDragging) continue;
+      ball.vx += directionX * force;
+      ball.vy += directionY * force;
+    }
+  }
+
+  if (grabActive) {
+    applyLocalRadialForce(grabPointerX, grabPointerY, -1);
+  }
+
+  if (repelActive) {
+    applyLocalRadialForce(repelPointerX, repelPointerY, 1);
+  }
+}
+
+/* =========================================================
+   UPDATE BALLS
+========================================================= */
+
+function updateBalls() {
+
+  const world =
+    getWorldSize();
+
+
+  for (
+    const ball of balls
+  ) {
+
+    ball.size =
+      baseBallSize();
+
+
+    if (
+      ball.isDragging ||
+      ball.frozen ||
+      ball.stoppedByStop
+    ) {
+
+      clampBall(
+        ball
+      );
+
+    }
+
+    else if (
+      movementMode ===
+      "straight"
+    ) {
+
+      updateStraightBall(
+        ball,
+        world
+      );
+
+    }
+
+    else if (
+      movementMode ===
+      "bounce"
+    ) {
+
+      updateBounceBall(
+        ball,
+        world
+      );
+
+    }
+
+
+
+
+    checkLineCollision(
+      ball
+    );
+
+
+    clampBall(
+      ball
+    );
+
+
+    const screen =
+      worldToScreen(
+        ball.x,
+        ball.y
+      );
+
+
+    const screenSize =
+      ball.size *
+      spaceZoom;
+
+    const visualScale =
+      screenSize /
+      baseBallSize();
+
+    /*
+      Render the ball at its real on-screen size instead of enlarging
+      a 64px cached layer with transform: scale(). This keeps existing
+      balls sharp when zoomed in. Shadow distances are scaled too, so
+      tiny balls keep the same tonal balance instead of turning black.
+    */
+    ball.element.style.width =
+      screenSize +
+      "px";
+
+    ball.element.style.height =
+      screenSize +
+      "px";
+
+    ball.element.style.boxShadow =
+      `inset ${-10 * visualScale}px ${-12 * visualScale}px ${18 * visualScale}px rgba(0,0,0,0.55), ` +
+      `inset ${8 * visualScale}px ${8 * visualScale}px ${15 * visualScale}px rgba(255,255,255,0.28), ` +
+      `0 ${8 * visualScale}px ${18 * visualScale}px rgba(0,0,0,0.25)`;
+
+    ball.element.style.transform =
+      `translate3d(${screen.x}px, ${screen.y}px, 0)`;
+
+  }
+
+}
+
+
+/* =========================================================
+   ANIMATION
+========================================================= */
+
+function animate() {
+
+  applyGestureForces();
+
+  updateBalls();
+
+  checkBallCollisions();
+
+  for (const ball of balls) {
+    capBallVelocity(ball);
+  }
+
+  updateContactHolds();
+
+
+  if (
+    ballCollisionCooldown >
+    0
+  ) {
+
+    ballCollisionCooldown--;
+
+  }
+
+
+  requestAnimationFrame(
+    animate
+  );
+
+}
+
+
+
+
+/* =========================================================
+   STOP / START — one transport toggle
+========================================================= */
+
+const stopBallsButton = document.getElementById("stopBallsButton");
+
+function updateStopStartButton() {
+  /* Running state shows STOP; stopped state shows START. */
+  stopBallsButton.textContent = worldStopped ? "start" : "stop";
+  stopBallsButton.classList.toggle("active", worldStopped);
+}
+
+stopBallsButton.addEventListener(
+  "click",
+  () => {
+    worldStopped = !worldStopped;
+
+    for (const ball of balls) {
+      if (worldStopped) {
+        ball.preStopVx = ball.vx;
+        ball.preStopVy = ball.vy;
+        ball.vx = 0;
+        ball.vy = 0;
+        ball.dragVx = 0;
+        ball.dragVy = 0;
+        ball.stoppedByStop = true;
+      }
+      else {
+        ball.stoppedByStop = false;
+        if (!ball.frozen) {
+          ball.vx = Number.isFinite(ball.preStopVx) ? ball.preStopVx : 0;
+          ball.vy = Number.isFinite(ball.preStopVy) ? ball.preStopVy : 0;
+        }
+      }
+    }
+
+    updateStopStartButton();
+  }
+);
+
+updateStopStartButton();
+
+
+/* =========================================================
+   ZOOM
+========================================================= */
+
+const zoomRange =
+  document.getElementById(
+    "zoomRange"
+  );
+
+const zoomPercent =
+  document.getElementById(
+    "zoomPercent"
+  );
+
+const zoomGaugeThumb =
+  document.getElementById(
+    "zoomGaugeThumb"
+  );
+
+
+function setSpaceZoom(
+  value
+) {
+
+  const oldZoom =
+    spaceZoom;
+
+
+  const oldWorld =
+    {
+
+      width:
+        window.innerWidth /
+        oldZoom,
+
+      height:
+        window.innerHeight /
+        oldZoom
+
+    };
+
+
+  spaceZoom =
+    Math.max(
+      MIN_ZOOM,
+      Math.min(
+        MAX_ZOOM,
+        Number(value)
+      )
+    );
+
+
+  const newWorld =
+    getWorldSize();
+
+
+  /*
+     Keep balls at approximately the
+     same relative location when world
+     dimensions change.
+  */
+
+  if (
+    oldWorld.width >
+    0 &&
+    oldWorld.height >
+    0
+  ) {
+
+    for (
+      const ball of balls
+    ) {
+
+      const relativeX =
+        ball.x /
+        oldWorld.width;
+
+      const relativeY =
+        ball.y /
+        oldWorld.height;
+
+
+      ball.x =
+        relativeX *
+        newWorld.width;
+
+      ball.y =
+        relativeY *
+        newWorld.height;
+
+    }
+
+  }
+
+
+  const zoomPercentValue = Math.round(spaceZoom * 100);
+
+  if (zoomRange) {
+    zoomRange.value = zoomPercentValue;
+  }
+
+  if (zoomPercent) {
+    zoomPercent.textContent = zoomPercentValue + "%";
+  }
+
+  if (zoomGaugeThumb) {
+    const minPercent = Number(zoomRange.min);
+    const maxPercent = Number(zoomRange.max);
+    const normalized =
+      (zoomPercentValue - minPercent) /
+      (maxPercent - minPercent);
+
+    zoomGaugeThumb.style.left =
+      Math.max(0, Math.min(1, normalized)) * 100 + "%";
+  }
+
+
+  clampAllBalls();
+
+  redrawLines();
+
+}
+
+
+/* =========================================================
+   ZOOM RANGE
+========================================================= */
+
+if (zoomRange) {
+  zoomRange.addEventListener(
+    "input",
+    e => {
+      setSpaceZoom(Number(e.target.value) / 100);
+    }
+  );
+}
+
+
+/* =========================================================
+   TRACKPAD / WHEEL ZOOM
+========================================================= */
+
+function handleZoomWheel(
+  e
+) {
+
+  const controls =
+    document.getElementById(
+      "controls"
+    );
+
+
+  const insideMenu =
+    controls.contains(
+      e.target
+    );
+
+
+  /*
+     Menu scrolling remains normal.
+
+     Trackpad pinch with ctrlKey
+     still controls zoom.
+  */
+
+  if (
+    insideMenu &&
+    !e.ctrlKey
+  ) {
+
+    return;
+
+  }
+
+
+  e.preventDefault();
+
+  e.stopPropagation();
+
+
+  const sensitivity =
+    e.ctrlKey
+      ? 0.005
+      : 0.0012;
+
+
+  const nextZoom =
+    spaceZoom *
+    Math.exp(
+      -e.deltaY *
+      sensitivity
+    );
+
+
+  setSpaceZoom(
+    nextZoom
+  );
+
+}
+
+
+window.addEventListener(
+  "wheel",
+  handleZoomWheel,
+  {
+    passive: false
+  }
+);
+
+
+/*
+   Safari native pinch protection
+*/
+
+document.addEventListener(
+  "gesturestart",
+  e => e.preventDefault()
+);
+
+document.addEventListener(
+  "gesturechange",
+  e => e.preventDefault()
+);
+
+document.addEventListener(
+  "gestureend",
+  e => e.preventDefault()
+);
+
+
+/* =========================================================
+   randomize
+========================================================= */
+
+const randomizableControls = [
+
+  "surfaceVolume",
+  "surfaceSize",
+  "surfaceDensity",
+  "surfaceSpeed",
+  "surfacePitch",
+
+  "ballVolume",
+  "ballSize",
+  "ballDensity",
+  "ballSpeedAudio",
+  "ballPitch",
+
+  "lineVolume",
+  "lineSize",
+  "lineDensity",
+  "lineSpeed",
+  "linePitch",
+
+
+  "ballVelocity"
+
+];
+
+
+function randomizeInput(
+  input
+) {
+
+  const min =
+    Number(
+      input.min
+    );
+
+  const max =
+    Number(
+      input.max
+    );
+
+  const step =
+    Number(
+      input.step || 1
+    );
+
+
+  const random =
+    min +
+    Math.random() *
+    (
+      max - min
+    );
+
+
+  let value =
+    Math.round(
+      random /
+      step
+    ) *
+    step;
+
+
+  value =
+    Math.max(
+      min,
+      Math.min(
+        max,
+        value
+      )
+    );
+
+
+  input.value =
+    value;
+
+
+  input.dispatchEvent(
+    new Event(
+      "input",
+      {
+        bubbles: true
+      }
+    )
+  );
+
+}
+
+
+document
+  .getElementById(
+    "randomizeButton"
+  )
+  .addEventListener(
+    "click",
+    () => {
+
+      for (
+        const id of
+        randomizableControls
+      ) {
+
+        randomizeInput(
+          document
+            .getElementById(
+              id
+            )
+        );
+
+      }
+
+
+      redrawLines();
+
+    }
+  );
+
+
+/* =========================================================
+   MENU OPEN / CLOSE
+========================================================= */
+
+const controls =
+  document.getElementById(
+    "controls"
+  );
+
+const openMenu =
+  document.getElementById(
+    "openMenu"
+  );
+
+const closeMenu =
+  document.getElementById(
+    "closeMenu"
+  );
+
+
+closeMenu.addEventListener(
+  "click",
+  e => {
+
+    e.stopPropagation();
+
+    controls.classList.add(
+      "closed"
+    );
+
+    openMenu.style.display =
+      "block";
+
+  }
+);
+
+
+openMenu.addEventListener(
+  "click",
+  () => {
+
+    controls.classList.remove(
+      "closed"
+    );
+
+    openMenu.style.display =
+      "none";
+
+  }
+);
+
+
+/* =========================================================
+   DRAG MENU — drag from any non-interactive menu area
+========================================================= */
+
+let menuDragging = false;
+let menuOffsetX = 0;
+let menuOffsetY = 0;
+let menuDragPointerId = null;
+
+function isMenuInteractiveTarget(target) {
+  return !!(target.closest && target.closest(
+    "button, input, label, a, .menuResizeHandle, #confirmOverlay"
+  ));
+}
+
+controls.addEventListener("pointerdown", e => {
+  if (menuResizing) return;
+  if (isMenuInteractiveTarget(e.target)) return;
+
+  const rect = controls.getBoundingClientRect();
+  menuDragging = true;
+  menuDragPointerId = e.pointerId;
+  menuOffsetX = e.clientX - rect.left;
+  menuOffsetY = e.clientY - rect.top;
+  controls.setPointerCapture(e.pointerId);
+});
+
+controls.addEventListener("pointermove", e => {
+  if (!menuDragging || e.pointerId !== menuDragPointerId) return;
+
+  let x = e.clientX - menuOffsetX;
+  let y = e.clientY - menuOffsetY;
+
+  x = Math.max(0, Math.min(window.innerWidth - controls.offsetWidth, x));
+  y = Math.max(0, Math.min(window.innerHeight - controls.offsetHeight, y));
+
+  controls.style.left = x + "px";
+  controls.style.top = y + "px";
+  controls.style.right = "auto";
+  controls.style.bottom = "auto";
+});
+
+function stopMenuDrag(e) {
+  if (e && menuDragPointerId !== null && e.pointerId !== menuDragPointerId) return;
+  menuDragging = false;
+  menuDragPointerId = null;
+}
+
+controls.addEventListener("pointerup", stopMenuDrag);
+controls.addEventListener("pointercancel", stopMenuDrag);
+
+/* =========================================================
+   RESIZE MENU FROM FOUR EDGES
+========================================================= */
+
+const menuResizeHandles =
+  controls.querySelectorAll(
+    ".menuResizeHandle"
+  );
+
+let menuResizing = false;
+let menuResizeEdge = null;
+let menuResizeStartX = 0;
+let menuResizeStartY = 0;
+let menuResizeStartRect = null;
+
+const MENU_MIN_WIDTH = 220;
+const MENU_MIN_HEIGHT = 260;
+const MENU_DEFAULT_WIDTH = 220;
+const MENU_MAX_WIDTH = 440;
+
+for (const handle of menuResizeHandles) {
+  handle.addEventListener(
+    "pointerdown",
+    e => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      menuResizing = true;
+      menuResizeEdge = handle.dataset.edge;
+      menuResizeStartX = e.clientX;
+      menuResizeStartY = e.clientY;
+      menuResizeStartRect = controls.getBoundingClientRect();
+
+      handle.setPointerCapture(e.pointerId);
+    }
+  );
+
+  handle.addEventListener(
+    "pointermove",
+    e => {
+      if (!menuResizing || !menuResizeStartRect) return;
+
+      const dx = e.clientX - menuResizeStartX;
+      const dy = e.clientY - menuResizeStartY;
+
+      let left = menuResizeStartRect.left;
+      let top = menuResizeStartRect.top;
+      let width = menuResizeStartRect.width;
+      let height = menuResizeStartRect.height;
+
+      if (menuResizeEdge === "right") {
+        width = Math.max(
+          MENU_MIN_WIDTH,
+          Math.min(Math.min(MENU_MAX_WIDTH, window.innerWidth - left), menuResizeStartRect.width + dx)
+        );
+      }
+
+      if (menuResizeEdge === "left") {
+        const minLeft = Math.max(0, menuResizeStartRect.right - Math.min(MENU_MAX_WIDTH, window.innerWidth));
+        const maxLeft = menuResizeStartRect.right - MENU_MIN_WIDTH;
+        left = Math.max(minLeft, Math.min(maxLeft, menuResizeStartRect.left + dx));
+        width = menuResizeStartRect.right - left;
+      }
+
+      if (menuResizeEdge === "bottom") {
+        height = Math.max(
+          MENU_MIN_HEIGHT,
+          Math.min(window.innerHeight - top, menuResizeStartRect.height + dy)
+        );
+      }
+
+      if (menuResizeEdge === "top") {
+        const maxTop = menuResizeStartRect.bottom - MENU_MIN_HEIGHT;
+        top = Math.max(0, Math.min(maxTop, menuResizeStartRect.top + dy));
+        height = menuResizeStartRect.bottom - top;
+      }
+
+      controls.style.left = left + "px";
+      controls.style.top = top + "px";
+      controls.style.width = width + "px";
+      controls.style.height = height + "px";
+      controls.style.right = "auto";
+      controls.style.bottom = "auto";
+    }
+  );
+
+  const stopResize = () => {
+    menuResizing = false;
+    menuResizeEdge = null;
+    menuResizeStartRect = null;
+  };
+
+  handle.addEventListener("pointerup", stopResize);
+  handle.addEventListener("pointercancel", stopResize);
+}
+
+/* =========================================================
+   FREE MUSIC
+========================================================= */
+
+function sayFreeMusic() {
+
+  if (
+    !audioUnlocked
+  ) {
+
+    return;
+
+  }
+
+
+  if (
+    "speechSynthesis"
+    in window
+  ) {
+
+    speechSynthesis.cancel();
+
+
+    const speech =
+      new SpeechSynthesisUtterance(
+        "FREE MUSIC"
+      );
+
+
+    speech.lang =
+      "en-US";
+
+    speech.rate =
+      0.82;
+
+    speech.pitch =
+      0.75;
+
+    speech.volume =
+      1;
+
+
+    speechSynthesis.speak(
+      speech
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   MALE GROWL
+========================================================= */
+
+function playMaleGrowl() {
+
+  if (
+    !audioUnlocked
+  ) {
+
+    return;
+
+  }
+
+
+  const audio =
+    audioContext;
+
+  const now =
+    audio.currentTime;
+
+  const osc1 =
+    audio.createOscillator();
+
+  const osc2 =
+    audio.createOscillator();
+
+  const filter =
+    audio.createBiquadFilter();
+
+  const gain =
+    audio.createGain();
+
+
+  osc1.type =
+    "sawtooth";
+
+  osc2.type =
+    "triangle";
+
+
+  osc1.frequency.setValueAtTime(
+    95,
+    now
+  );
+
+  osc1.frequency.exponentialRampToValueAtTime(
+    55,
+    now + 0.55
+  );
+
+
+  osc2.frequency.setValueAtTime(
+    48,
+    now
+  );
+
+  osc2.frequency.exponentialRampToValueAtTime(
+    32,
+    now + 0.55
+  );
+
+
+  filter.type =
+    "lowpass";
+
+  filter.frequency.setValueAtTime(
+    420,
+    now
+  );
+
+  filter.Q.value =
+    4;
+
+
+  gain.gain.setValueAtTime(
+    0.001,
+    now
+  );
+
+  gain.gain.exponentialRampToValueAtTime(
+    0.16,
+    now + 0.04
+  );
+
+  gain.gain.exponentialRampToValueAtTime(
+    0.001,
+    now + 0.62
+  );
+
+
+  osc1.connect(
+    filter
+  );
+
+  osc2.connect(
+    filter
+  );
+
+  filter.connect(
+    gain
+  );
+
+  gain.connect(
+    audio.destination
+  );
+
+
+  if (
+    recordingDestination
+  ) {
+
+    gain.connect(
+      recordingDestination
+    );
+
+  }
+
+
+  osc1.start(now);
+  osc2.start(now);
+
+  osc1.stop(
+    now + 0.65
+  );
+
+  osc2.stop(
+    now + 0.65
+  );
+
+}
+
+
+/* =========================================================
+   RECORDING
+========================================================= */
+
+const recordButton =
+  document.getElementById(
+    "recordButton"
+  );
+
+const downloadButton =
+  document.getElementById(
+    "downloadButton"
+  );
+
+const recordingIndicator =
+  document.getElementById(
+    "recording"
+  );
+
+const recordExport = document.getElementById("recordExport");
+const recordDuration = document.getElementById("recordDuration");
+const recordFormat = document.getElementById("recordFormat");
+const recordName = document.getElementById("recordName");
+
+let exportCache = {
+  wav: null,
+  mp3: null
+};
+
+function formatRecordingDuration(seconds) {
+  const total = Math.max(0, Math.round(seconds));
+  const minutes = Math.floor(total / 60);
+  const secs = total % 60;
+  return String(minutes).padStart(2, "0") + ":" + String(secs).padStart(2, "0");
+}
+
+
+function safeRecordingName(value) {
+  const cleaned = (value || "free-music")
+    .trim()
+    .replace(/[^a-z0-9._-]+/gi, "-")
+    .replace(/^-+|-+$/g, "");
+  return cleaned || "free-music";
+}
+
+
+function audioBufferToWavBlob(audioBuffer) {
+  const channels = audioBuffer.numberOfChannels;
+  const sampleRate = audioBuffer.sampleRate;
+  const frames = audioBuffer.length;
+  const bytesPerSample = 2;
+  const blockAlign = channels * bytesPerSample;
+  const buffer = new ArrayBuffer(44 + frames * blockAlign);
+  const view = new DataView(buffer);
+
+  function writeString(offset, value) {
+    for (let i = 0; i < value.length; i++) {
+      view.setUint8(offset + i, value.charCodeAt(i));
+    }
+  }
+
+  writeString(0, "RIFF");
+  view.setUint32(4, 36 + frames * blockAlign, true);
+  writeString(8, "WAVE");
+  writeString(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, channels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * blockAlign, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, 16, true);
+  writeString(36, "data");
+  view.setUint32(40, frames * blockAlign, true);
+
+  const channelData = [];
+  for (let c = 0; c < channels; c++) {
+    channelData.push(audioBuffer.getChannelData(c));
+  }
+
+  let offset = 44;
+  for (let i = 0; i < frames; i++) {
+    for (let c = 0; c < channels; c++) {
+      const sample = Math.max(-1, Math.min(1, channelData[c][i]));
+      view.setInt16(
+        offset,
+        sample < 0 ? sample * 0x8000 : sample * 0x7fff,
+        true
+      );
+      offset += 2;
+    }
+  }
+
+  return new Blob([buffer], { type: "audio/wav" });
+}
+
+function floatToInt16(floatData) {
+  const out = new Int16Array(floatData.length);
+  for (let i = 0; i < floatData.length; i++) {
+    const sample = Math.max(-1, Math.min(1, floatData[i]));
+    out[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+  }
+  return out;
+}
+
+function audioBufferToMp3Blob(audioBuffer) {
+  if (!window.lamejs) {
+    throw new Error("mp3 encoder unavailable");
+  }
+
+  const channels = Math.min(2, audioBuffer.numberOfChannels);
+  const sampleRate = audioBuffer.sampleRate;
+  const encoder = new lamejs.Mp3Encoder(channels, sampleRate, 128);
+  const blockSize = 1152;
+  const mp3Data = [];
+
+  const left = floatToInt16(audioBuffer.getChannelData(0));
+  const right = channels > 1
+    ? floatToInt16(audioBuffer.getChannelData(1))
+    : null;
+
+  for (let i = 0; i < left.length; i += blockSize) {
+    const leftChunk = left.subarray(i, i + blockSize);
+    const encoded = channels > 1
+      ? encoder.encodeBuffer(leftChunk, right.subarray(i, i + blockSize))
+      : encoder.encodeBuffer(leftChunk);
+    if (encoded.length > 0) {
+      mp3Data.push(new Int8Array(encoded));
+    }
+  }
+
+  const end = encoder.flush();
+  if (end.length > 0) {
+    mp3Data.push(new Int8Array(end));
+  }
+
+  return new Blob(mp3Data, { type: "audio/mpeg" });
+}
+
+async function getExportBlob(format) {
+  if (!recordingBlob) return null;
+  if (exportCache[format]) return exportCache[format];
+
+  const arrayBuffer = await recordingBlob.arrayBuffer();
+  const decoded = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+
+  let blob;
+  if (format === "mp3") {
+    blob = audioBufferToMp3Blob(decoded);
+  }
+  else {
+    blob = audioBufferToWavBlob(decoded);
+  }
+
+  exportCache[format] = blob;
+  return blob;
+}
+
+
+
+recordButton.addEventListener(
+  "click",
+  () => {
+
+    initAudio();
+
+
+    if (
+      !mediaRecorder ||
+      mediaRecorder.state ===
+      "inactive"
+    ) {
+
+      recordedChunks = [];
+
+      recordingBlob = null;
+      recordingDurationSeconds = 0;
+      recordingStartedAt = performance.now();
+      recordExport.style.display = "none";
+      exportCache.wav = null;
+      exportCache.mp3 = null;
+
+      let options = {};
+
+
+      if (
+        MediaRecorder
+          .isTypeSupported(
+            "audio/webm;codecs=opus"
+          )
+      ) {
+
+        options.mimeType =
+          "audio/webm;codecs=opus";
+
+      }
+
+
+      mediaRecorder =
+        new MediaRecorder(
+          recordingDestination.stream,
+          options
+        );
+
+
+      mediaRecorder.ondataavailable =
+        e => {
+
+          if (
+            e.data &&
+            e.data.size > 0
+          ) {
+
+            recordedChunks.push(
+              e.data
+            );
+
+          }
+
+        };
+
+
+      mediaRecorder.onstop =
+        () => {
+
+          recordingBlob =
+            new Blob(
+              recordedChunks,
+              {
+                type:
+                  (mediaRecorder && mediaRecorder.mimeType) || "audio/webm"
+              }
+            );
+
+          recordingDurationSeconds =
+            Math.max(0, (performance.now() - recordingStartedAt) / 1000);
+
+          recordDuration.textContent =
+            formatRecordingDuration(recordingDurationSeconds);
+
+          recordExport.style.display = "block";
+
+          document
+            .getElementById(
+              "info"
+            )
+            .textContent =
+              "recording ready";
+
+        };
+
+
+      mediaRecorder.start();
+
+
+      recordingIndicator.style.display =
+        "block";
+
+      recordButton.textContent =
+        "stop";
+
+      recordExport.style.display =
+        "none";
+
+    }
+
+    else {
+
+      mediaRecorder.stop();
+
+      recordingIndicator.style.display =
+        "none";
+
+      recordButton.textContent =
+        "record";
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   DOWNLOAD
+========================================================= */
+
+downloadButton.addEventListener(
+  "click",
+  async () => {
+
+    if (!recordingBlob) {
+      return;
+    }
+
+    downloadButton.textContent = "preparing...";
+
+    try {
+      const format = recordFormat.value;
+      const blob = await getExportBlob(format);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = url;
+      a.download = safeRecordingName(recordName.value) + "." + format;
+
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 1000);
+    }
+    catch (error) {
+      document.getElementById("info").textContent =
+        recordFormat.value === "mp3"
+          ? "mp3 encoder unavailable"
+          : "export failed";
+    }
+    finally {
+      downloadButton.textContent = "download";
+    }
+
+  }
+);
+
+
+/* =========================================================
+   START
+========================================================= */
+
+setTool("addBall");
+
+resizeCanvas();
+
+syncBallCount();
+
+setSpaceZoom(
+  1
+);
+
+setMovementMode(
+  "straight"
+);
+
+animate();
+
+</script>
+
+</body>
+
+</html>
