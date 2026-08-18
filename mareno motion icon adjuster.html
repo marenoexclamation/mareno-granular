@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mareno motion icon adjuster</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      color-scheme: light;
+      --ink: #111;
+      --muted: #777;
+      --line: #d8d8d8;
+      --paper: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    body { margin: 0; min-width: 320px; color: var(--ink); background: var(--paper); }
+    button, input { font: inherit; }
+    header {
+      position: sticky;
+      z-index: 5;
+      top: 0;
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.96);
+      backdrop-filter: blur(8px);
+    }
+    .titleRow, .toolRow, .finishRow { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    h1 { margin: 0; font-size: 16px; font-weight: 700; }
+    .note { margin: 0; color: var(--muted); font-size: 12px; }
+    .toolRow { margin-top: 13px; }
+    button {
+      min-height: 30px;
+      padding: 5px 10px;
+      border: 1px solid var(--ink);
+      border-radius: 0;
+      color: var(--ink);
+      background: var(--paper);
+      cursor: pointer;
+    }
+    button:hover, button[aria-pressed="true"] { color: var(--paper); background: var(--ink); }
+    .modeGroup { display: inline-flex; }
+    .modeButton + .modeButton { border-left: 0; }
+    .lengthControl {
+      display: grid;
+      grid-template-columns: auto minmax(150px, 260px) 52px;
+      align-items: center;
+      gap: 8px;
+      min-width: 280px;
+      font-size: 12px;
+    }
+    input[type="range"] { width: 100%; accent-color: var(--ink); }
+    output { font-variant-numeric: tabular-nums; text-align: right; }
+    #selectedLine { color: var(--muted); font-size: 11px; }
+    main { display: grid; grid-template-columns: repeat(3, minmax(270px, 1fr)); border-bottom: 1px solid var(--line); }
+    .editor { min-width: 0; padding: 18px 18px 20px; border-right: 1px solid var(--line); }
+    .editor:last-child { border-right: 0; }
+    .editorHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    h2 { margin: 0; font-size: 13px; }
+    .actual { display: inline-flex; align-items: center; gap: 7px; min-height: 26px; color: var(--muted); font-size: 10px; }
+    .actual svg {
+      width: 32px;
+      height: 22px;
+      overflow: visible;
+      fill: none;
+      stroke: var(--ink);
+      stroke-width: 1.35;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .actual svg * { vector-effect: non-scaling-stroke; }
+    .stage {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 310px;
+      border: 1px solid var(--line);
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+      background-image: linear-gradient(#f5f5f5 1px, transparent 1px), linear-gradient(90deg, #f5f5f5 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    .stage svg {
+      width: 84%;
+      height: 84%;
+      overflow: visible;
+      fill: none;
+      stroke: var(--ink);
+      stroke-width: 1.35;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .editableLine { cursor: move; pointer-events: stroke; }
+    .editableLine path { pointer-events: stroke; }
+    .draggableCircle { cursor: move; pointer-events: all; }
+    body[data-mode="line"] .stage .draggableCircle { pointer-events: none; }
+    body[data-mode="circle"] .stage .editableLine { pointer-events: none; }
+    .editorHint { margin: 9px 0 0; color: var(--muted); font-size: 11px; }
+    footer { display: grid; grid-template-columns: minmax(300px, 1fr) auto; gap: 18px; align-items: end; padding: 16px 22px 20px; }
+    .readoutLabel { margin: 0 0 6px; font-size: 11px; font-weight: 700; }
+    pre {
+      min-height: 100px;
+      margin: 0;
+      padding: 9px 11px;
+      border: 1px solid var(--line);
+      overflow: auto;
+      color: #333;
+      background: #fafafa;
+      font: 10px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+      white-space: pre-wrap;
+    }
+    .finishRow { justify-content: flex-end; }
+    #finishButton { color: var(--paper); background: var(--ink); }
+    #finishStatus { max-width: 260px; color: var(--muted); font-size: 11px; line-height: 1.4; }
+    #finishStatus.isFinal { color: var(--ink); font-weight: 700; }
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+      .editor { border-right: 0; border-bottom: 1px solid var(--line); }
+      .editor:last-child { border-bottom: 0; }
+      .stage { height: 340px; }
+      footer { grid-template-columns: 1fr; }
+      .finishRow { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body data-mode="line">
+  <header>
+    <div class="titleRow">
+      <h1>mareno motion icon adjuster</h1>
+      <p class="note">線をクリックするとline lengthの対象になります。右上に実寸を表示。</p>
+    </div>
+    <div class="toolRow">
+      <span class="modeGroup" aria-label="移動対象">
+        <button class="modeButton" id="moveLineButton" type="button" aria-pressed="true">線を移動</button>
+        <button class="modeButton" id="moveCircleButton" type="button" aria-pressed="false">丸を移動</button>
+      </span>
+      <label class="lengthControl" for="lineLength">
+        <span>line length</span>
+        <input id="lineLength" type="range" min="1" max="50" step="0.01" value="40">
+        <output id="lineLengthValue">40.00</output>
+      </label>
+      <span id="selectedLine">bounce / floor</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="editor">
+      <div class="editorHead">
+        <h2>bounce</h2>
+        <div class="actual"><span>actual</span><svg viewBox="0 0 44 22" aria-label="bounce 実寸"><g data-preview="bounce"></g></svg></div>
+      </div>
+      <div class="stage"><svg data-stage="bounce" viewBox="0 0 44 22" aria-label="bounce 拡大編集"><g data-render="bounce"></g></svg></div>
+      <p class="editorHint">床線・軌道線・ボールを個別に移動</p>
+    </section>
+
+    <section class="editor">
+      <div class="editorHead">
+        <h2>gravity</h2>
+        <div class="actual"><span>actual</span><svg viewBox="0 0 24 24" aria-label="gravity 実寸"><g data-preview="gravity"></g></svg></div>
+      </div>
+      <div class="stage"><svg data-stage="gravity" viewBox="0 0 24 24" aria-label="gravity 拡大編集"><g data-render="gravity"></g></svg></div>
+      <p class="editorHint">4本の矢印と中央の丸を個別に移動</p>
+    </section>
+
+    <section class="editor">
+      <div class="editorHead">
+        <h2>repel</h2>
+        <div class="actual"><span>actual</span><svg viewBox="0 0 24 24" aria-label="repel 実寸"><g data-preview="repel"></g></svg></div>
+      </div>
+      <div class="stage"><svg data-stage="repel" viewBox="0 0 24 24" aria-label="repel 拡大編集"><g data-render="repel"></g></svg></div>
+      <p class="editorHint">4本の放射線と5つの丸を個別に移動</p>
+    </section>
+  </main>
+
+  <footer>
+    <div>
+      <p class="readoutLabel">確定用のSVG座標</p>
+      <pre id="coordinateOutput" aria-live="polite"></pre>
+    </div>
+    <div class="finishRow">
+      <span id="finishStatus">配置が決まったら確定してください。</span>
+      <button id="finishButton" type="button">この配置で確定</button>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      const NS = 'http://www.w3.org/2000/svg';
+      const P = (x, y) => ({ x, y });
+      const poly = (...points) => ({ kind: 'poly', points });
+      const cubic = (...points) => ({ kind: 'cubic', points });
+      const item = (id, label, anchorMode, ...parts) => ({ id, label, anchorMode, parts });
+      const initial = {
+        bounce: {
+          lines: [
+            item('floor', 'floor', 'center', poly(P(2,20), P(42,20))),
+            item('arc', 'trajectory', 'first', cubic(P(4,17), P(11,7), P(21,6), P(29,13)))
+          ],
+          circles: [{ cx:34, cy:11, r:5 }]
+        },
+        gravity: {
+          lines: [
+            item('up', 'up arrow', 'first', poly(P(12,9), P(12,3)), poly(P(9.5,5.5), P(12,3), P(14.5,5.5))),
+            item('right', 'right arrow', 'first', poly(P(15,12), P(21,12)), poly(P(18.5,9.5), P(21,12), P(18.5,14.5))),
+            item('down', 'down arrow', 'first', poly(P(12,15), P(12,21)), poly(P(9.5,18.5), P(12,21), P(14.5,18.5))),
+            item('left', 'left arrow', 'first', poly(P(9,12), P(3,12)), poly(P(5.5,9.5), P(3,12), P(5.5,14.5)))
+          ],
+          circles: [{ cx:12, cy:12, r:1.8 }]
+        },
+        repel: {
+          lines: [
+            item('nw', 'north-west ray', 'first', poly(P(9.5,9.5), P(7,7))),
+            item('ne', 'north-east ray', 'first', poly(P(14.5,9.5), P(17,7))),
+            item('sw', 'south-west ray', 'first', poly(P(9.5,14.5), P(7,17))),
+            item('se', 'south-east ray', 'first', poly(P(14.5,14.5), P(17,17)))
+          ],
+          circles: [
+            { cx:12, cy:12, r:2.6 }, { cx:5, cy:5, r:1.2 }, { cx:19, cy:5, r:1.2 },
+            { cx:5, cy:19, r:1.2 }, { cx:19, cy:19, r:1.2 }
+          ]
+        }
+      };
+
+      const clone = value => JSON.parse(JSON.stringify(value));
+      const state = clone(initial);
+      let mode = 'line';
+      let selected = { iconKey:'bounce', lineIndex:0 };
+      let drag = null;
+
+      const moveLineButton = document.getElementById('moveLineButton');
+      const moveCircleButton = document.getElementById('moveCircleButton');
+      const lengthInput = document.getElementById('lineLength');
+      const lengthValue = document.getElementById('lineLengthValue');
+      const selectedLine = document.getElementById('selectedLine');
+      const output = document.getElementById('coordinateOutput');
+      const finishStatus = document.getElementById('finishStatus');
+
+      const fmt = n => Number(n.toFixed(3)).toString();
+      const distance = (a,b) => Math.hypot(b.x-a.x,b.y-a.y);
+
+      function anchorOf(line) {
+        const points = line.parts[0].points;
+        if (line.anchorMode === 'center') return P((points[0].x + points.at(-1).x)/2, (points[0].y + points.at(-1).y)/2);
+        return P(points[0].x, points[0].y);
+      }
+
+      function lengthOf(line) {
+        const points = line.parts[0].points;
+        return distance(points[0], points.at(-1));
+      }
+
+      Object.values(state).forEach(icon => icon.lines.forEach(line => { line.baseLength = lengthOf(line); }));
+
+      function partD(part) {
+        const p = part.points;
+        if (part.kind === 'cubic') return `M${p[0].x} ${p[0].y}C${p[1].x} ${p[1].y} ${p[2].x} ${p[2].y} ${p[3].x} ${p[3].y}`;
+        return p.map((point,index) => `${index ? 'L' : 'M'}${point.x} ${point.y}`).join('');
+      }
+
+      function drawLine(line, iconKey, lineIndex, interactive) {
+        const group = document.createElementNS(NS,'g');
+        if (interactive) {
+          group.setAttribute('class','editableLine');
+          group.dataset.lineIndex = String(lineIndex);
+          group.dataset.iconKey = iconKey;
+        }
+        line.parts.forEach(part => {
+          const path = document.createElementNS(NS,'path');
+          path.setAttribute('d',partD(part));
+          group.append(path);
+        });
+        return group;
+      }
+
+      function drawCircle(circle, iconKey, circleIndex, interactive) {
+        const element = document.createElementNS(NS,'circle');
+        element.setAttribute('cx',circle.cx);
+        element.setAttribute('cy',circle.cy);
+        element.setAttribute('r',circle.r);
+        if (interactive) {
+          element.setAttribute('class','draggableCircle');
+          element.dataset.circleIndex = String(circleIndex);
+          element.dataset.iconKey = iconKey;
+        }
+        return element;
+      }
+
+      function renderIcon(iconKey) {
+        const icon = state[iconKey];
+        const stageLayer = document.querySelector(`[data-render="${iconKey}"]`);
+        const previewLayer = document.querySelector(`[data-preview="${iconKey}"]`);
+        stageLayer.replaceChildren();
+        previewLayer.replaceChildren();
+        const appendLines = () => icon.lines.forEach((line,index) => {
+          stageLayer.append(drawLine(line,iconKey,index,true));
+          previewLayer.append(drawLine(line,iconKey,index,false));
+        });
+        const appendCircles = () => icon.circles.forEach((circle,index) => {
+          stageLayer.append(drawCircle(circle,iconKey,index,true));
+          previewLayer.append(drawCircle(circle,iconKey,index,false));
+        });
+        if (iconKey === 'bounce') {
+          appendLines();
+          appendCircles();
+        } else {
+          appendCircles();
+          appendLines();
+        }
+      }
+
+      function updateSelectedControls() {
+        const line = state[selected.iconKey].lines[selected.lineIndex];
+        const current = lengthOf(line);
+        lengthInput.min = String(Math.max(.2,line.baseLength*.25));
+        lengthInput.max = String(line.baseLength*2.5);
+        lengthInput.value = String(current);
+        lengthValue.value = current.toFixed(2);
+        selectedLine.textContent = `${selected.iconKey} / ${line.label}`;
+      }
+
+      function outputLine(line) {
+        return line.parts.map(part => partD(part).replaceAll(/(-?\d+(?:\.\d+)?)/g, value => fmt(Number(value)))).join(' | ');
+      }
+
+      function updateOutput() {
+        const rows = [];
+        Object.entries(state).forEach(([iconKey,icon]) => {
+          icon.lines.forEach(line => rows.push(`${iconKey} ${line.id}: ${outputLine(line)}`));
+          rows.push(`${iconKey} circles: ${icon.circles.map(c => `${fmt(c.cx)},${fmt(c.cy)},r${fmt(c.r)}`).join(' / ')}`);
+        });
+        output.textContent = rows.join('\n');
+      }
+
+      function render() {
+        renderIcon('bounce');
+        renderIcon('gravity');
+        renderIcon('repel');
+        updateSelectedControls();
+        updateOutput();
+        finishStatus.classList.remove('isFinal');
+        finishStatus.textContent = '配置が決まったら確定してください。';
+      }
+
+      function svgPoint(svg,event) {
+        const point = svg.createSVGPoint();
+        point.x = event.clientX;
+        point.y = event.clientY;
+        return point.matrixTransform(svg.getScreenCTM().inverse());
+      }
+
+      function translateLine(line,origin,dx,dy) {
+        line.parts.forEach((part,partIndex) => part.points.forEach((point,pointIndex) => {
+          const source = origin.parts[partIndex].points[pointIndex];
+          point.x = source.x + dx;
+          point.y = source.y + dy;
+        }));
+      }
+
+      function resizeLine(line,newLength) {
+        const oldLength = lengthOf(line) || 1;
+        const factor = newLength / oldLength;
+        const anchor = anchorOf(line);
+        line.parts.forEach(part => part.points.forEach(point => {
+          point.x = anchor.x + (point.x-anchor.x)*factor;
+          point.y = anchor.y + (point.y-anchor.y)*factor;
+        }));
+      }
+
+      document.querySelectorAll('[data-stage]').forEach(svg => {
+        svg.addEventListener('pointerdown',event => {
+          const iconKey = svg.dataset.stage;
+          const start = svgPoint(svg,event);
+          if (mode === 'line') {
+            const lineElement = event.target.closest('[data-line-index]');
+            if (!lineElement) return;
+            const lineIndex = Number(lineElement.dataset.lineIndex);
+            selected = { iconKey, lineIndex };
+            drag = { type:'line',svg,iconKey,lineIndex,start,origin:clone(state[iconKey].lines[lineIndex]),pointerId:event.pointerId };
+          } else {
+            const circleElement = event.target.closest('[data-circle-index]');
+            if (!circleElement) return;
+            const circleIndex = Number(circleElement.dataset.circleIndex);
+            drag = { type:'circle',svg,iconKey,circleIndex,start,origin:clone(state[iconKey].circles[circleIndex]),pointerId:event.pointerId };
+          }
+          event.preventDefault();
+          svg.setPointerCapture(event.pointerId);
+          render();
+        });
+
+        svg.addEventListener('pointermove',event => {
+          if (!drag || drag.svg !== svg || drag.pointerId !== event.pointerId) return;
+          const point = svgPoint(svg,event);
+          const dx = point.x-drag.start.x;
+          const dy = point.y-drag.start.y;
+          if (drag.type === 'line') translateLine(state[drag.iconKey].lines[drag.lineIndex],drag.origin,dx,dy);
+          if (drag.type === 'circle') {
+            const circle = state[drag.iconKey].circles[drag.circleIndex];
+            circle.cx = drag.origin.cx+dx;
+            circle.cy = drag.origin.cy+dy;
+          }
+          render();
+        });
+
+        const endDrag = event => {
+          if (!drag || drag.svg !== svg || drag.pointerId !== event.pointerId) return;
+          drag = null;
+          render();
+        };
+        svg.addEventListener('pointerup',endDrag);
+        svg.addEventListener('pointercancel',endDrag);
+      });
+
+      function setMode(next) {
+        mode = next;
+        document.body.dataset.mode = mode;
+        moveLineButton.setAttribute('aria-pressed',String(mode==='line'));
+        moveCircleButton.setAttribute('aria-pressed',String(mode==='circle'));
+      }
+
+      moveLineButton.addEventListener('click',() => setMode('line'));
+      moveCircleButton.addEventListener('click',() => setMode('circle'));
+      lengthInput.addEventListener('input',() => {
+        const line = state[selected.iconKey].lines[selected.lineIndex];
+        resizeLine(line,Number(lengthInput.value));
+        render();
+      });
+      document.getElementById('finishButton').addEventListener('click',() => {
+        updateOutput();
+        finishStatus.classList.add('isFinal');
+        finishStatus.textContent = '確定済み。この画面のままCodexへ「確定」と送ってください。';
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mareno icon adjuster</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      color-scheme: light;
+      --ink: #111;
+      --muted: #777;
+      --line: #d8d8d8;
+      --paper: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background: var(--paper);
+    }
+    button, input { font: inherit; }
+    header {
+      position: sticky;
+      z-index: 5;
+      top: 0;
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.96);
+      backdrop-filter: blur(8px);
+    }
+    .titleRow,
+    .toolRow,
+    .finishRow {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: .01em;
+    }
+    .note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .toolRow { margin-top: 13px; }
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 30px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .toggle input { accent-color: var(--ink); }
+    .lengthControl {
+      display: grid;
+      grid-template-columns: auto minmax(120px, 220px) 48px;
+      align-items: center;
+      gap: 8px;
+      min-width: 245px;
+      font-size: 12px;
+    }
+    input[type="range"] { width: 100%; accent-color: var(--ink); }
+    output { font-variant-numeric: tabular-nums; text-align: right; }
+    button {
+      min-height: 30px;
+      padding: 5px 10px;
+      border: 1px solid var(--ink);
+      border-radius: 0;
+      color: var(--ink);
+      background: var(--paper);
+      cursor: pointer;
+    }
+    button:hover { color: var(--paper); background: var(--ink); }
+    .modeGroup { display: inline-flex; gap: 0; }
+    .modeButton + .modeButton { border-left: 0; }
+    .modeButton[aria-pressed="true"] { color: var(--paper); background: var(--ink); }
+    main {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(270px, 1fr));
+      gap: 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .editor {
+      min-width: 0;
+      padding: 18px 18px 20px;
+      border-right: 1px solid var(--line);
+    }
+    .editor:last-child { border-right: 0; }
+    .editorHead {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    h2 { margin: 0; font-size: 13px; }
+    .actual {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 26px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+    .actual svg {
+      width: 30px;
+      height: 22px;
+      overflow: visible;
+      fill: none;
+      stroke: var(--ink);
+      stroke-width: 1.35;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .actual svg * { vector-effect: non-scaling-stroke; }
+    .stage {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 300px;
+      border: 1px solid var(--line);
+      background-image:
+        linear-gradient(#f5f5f5 1px, transparent 1px),
+        linear-gradient(90deg, #f5f5f5 1px, transparent 1px);
+      background-size: 20px 20px;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+    }
+    .stage svg {
+      width: 88%;
+      height: 88%;
+      overflow: visible;
+      fill: none;
+      stroke: var(--ink);
+      stroke-width: 1.35;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .impactLine {
+      cursor: move;
+      pointer-events: stroke;
+    }
+    .draggableCircle {
+      cursor: move;
+      pointer-events: all;
+    }
+    .baseLineDraggable { pointer-events: stroke; }
+    body[data-mode="line"] .stage .draggableCircle { pointer-events: none; }
+    body[data-mode="circle"] .stage .impactLine,
+    body[data-mode="circle"] .stage .baseLineDraggable { pointer-events: none; }
+    .editorHint {
+      margin: 9px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    footer {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) auto;
+      gap: 18px;
+      align-items: end;
+      padding: 16px 22px 20px;
+    }
+    .readoutLabel {
+      margin: 0 0 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    pre {
+      min-height: 78px;
+      margin: 0;
+      padding: 9px 11px;
+      border: 1px solid var(--line);
+      overflow: auto;
+      color: #333;
+      background: #fafafa;
+      font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+      white-space: pre-wrap;
+    }
+    .finishRow { justify-content: flex-end; }
+    #finishButton { color: var(--paper); background: var(--ink); }
+    #finishButton:hover { opacity: .78; }
+    #finishStatus {
+      max-width: 260px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    #finishStatus.isFinal { color: var(--ink); font-weight: 700; }
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+      .editor { border-right: 0; border-bottom: 1px solid var(--line); }
+      .editor:last-child { border-bottom: 0; }
+      .stage { height: 330px; }
+      footer { grid-template-columns: 1fr; }
+      .finishRow { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body data-mode="line">
+  <header>
+    <div class="titleRow">
+      <h1>mareno icon adjuster</h1>
+      <p class="note">モードを選んで対象をドラッグ。右上に実寸を表示。本番HTMLはまだ変更されません。</p>
+    </div>
+    <div class="toolRow" aria-label="調整オプション">
+      <span class="modeGroup" aria-label="移動対象">
+        <button class="modeButton" id="moveLineButton" type="button" aria-pressed="true">線を移動</button>
+        <button class="modeButton" id="moveCircleButton" type="button" aria-pressed="false">丸を移動</button>
+      </span>
+      <label class="lengthControl" for="lineLength">
+        <span>line length</span>
+        <input id="lineLength" type="range" min="3" max="15" step="0.001" value="7.071">
+        <output id="lineLengthValue">7.07</output>
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <section class="editor" data-icon="surface">
+      <div class="editorHead">
+        <h2>ball * surface</h2>
+        <div class="actual"><span>actual</span>
+          <svg viewBox="0 0 62 44" aria-label="ball surface 実寸プレビュー">
+            <rect x="2" y="2" width="58" height="40"></rect>
+            <circle data-circle-shape="surface-0" cx="13" cy="22" r="9"></circle>
+            <g data-preview-lines="surface"></g>
+          </svg>
+        </div>
+      </div>
+      <div class="stage">
+        <svg data-stage="surface" viewBox="0 0 62 44" aria-label="ball surface 拡大編集">
+          <rect x="2" y="2" width="58" height="40"></rect>
+          <circle class="draggableCircle" data-drag-circle="0" data-circle-shape="surface-0" cx="13" cy="22" r="9"></circle>
+          <g data-lines="surface"></g>
+        </svg>
+      </div>
+      <p class="editorHint">線または円をドラッグして全体移動</p>
+    </section>
+
+    <section class="editor" data-icon="ballball">
+      <div class="editorHead">
+        <h2>ball * ball</h2>
+        <div class="actual"><span>actual</span>
+          <svg viewBox="0 0 42 27" aria-label="ball ball 実寸プレビュー">
+            <circle data-circle-shape="ballball-0" cx="12" cy="13" r="9"></circle>
+            <circle data-circle-shape="ballball-1" cx="30" cy="13" r="9"></circle>
+            <g data-preview-lines="ballball"></g>
+          </svg>
+        </div>
+      </div>
+      <div class="stage">
+        <svg data-stage="ballball" viewBox="0 0 42 27" aria-label="ball ball 拡大編集">
+          <circle class="draggableCircle" data-drag-circle="0" data-circle-shape="ballball-0" cx="12" cy="13" r="9"></circle>
+          <circle class="draggableCircle" data-drag-circle="1" data-circle-shape="ballball-1" cx="30" cy="13" r="9"></circle>
+          <g data-lines="ballball"></g>
+        </svg>
+      </div>
+      <p class="editorHint">短い線と2つの円を個別に移動可能</p>
+    </section>
+
+    <section class="editor" data-icon="ballline">
+      <div class="editorHead">
+        <h2>ball * line</h2>
+        <div class="actual"><span>actual</span>
+          <svg viewBox="0 0 40 36" aria-label="ball line 実寸プレビュー">
+            <circle data-circle-shape="ballline-0" cx="13" cy="13" r="9"></circle>
+            <path data-base-shape="ballline" d="M3 33L37 3"></path>
+            <g data-preview-lines="ballline"></g>
+          </svg>
+        </div>
+      </div>
+      <div class="stage">
+        <svg data-stage="ballline" viewBox="0 0 40 36" aria-label="ball line 拡大編集">
+          <circle class="draggableCircle" data-drag-circle="0" data-circle-shape="ballline-0" cx="13" cy="13" r="9"></circle>
+          <path class="baseLineDraggable" data-drag-base="ballline" data-base-shape="ballline" d="M3 33L37 3"></path>
+          <g data-lines="ballline"></g>
+        </svg>
+      </div>
+      <p class="editorHint">短い線・円・長い斜線を個別に移動可能</p>
+    </section>
+  </main>
+
+  <footer>
+    <div>
+      <p class="readoutLabel">確定用の座標</p>
+      <pre id="coordinateOutput" aria-live="polite"></pre>
+    </div>
+    <div class="finishRow">
+      <span id="finishStatus">配置が決まったら確定してください。</span>
+      <button id="finishButton" type="button">この配置で確定</button>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      const NS = 'http://www.w3.org/2000/svg';
+      const initial = {
+        length: 7.0711,
+        icons: {
+          surface: {
+            circles: [
+              { cx: 13, cy: 22, r: 9 }
+            ],
+            lines: [
+              { a: { x: 2, y: 20.2918 }, b: { x: 7, y: 15.2918 }, target: 'surface' }
+            ]
+          },
+          ballball: {
+            circles: [
+              { cx: 12, cy: 13, r: 9 },
+              { cx: 30, cy: 13, r: 9 }
+            ],
+            lines: [
+              { a: { x: 19, y: 7.3431 }, b: { x: 14, y: 2.3431 }, target: 'leftCircle' },
+              { a: { x: 23, y: 7.3431 }, b: { x: 28, y: 2.3431 }, target: 'rightCircle' }
+            ]
+          },
+          ballline: {
+            circles: [
+              { cx: 13, cy: 13, r: 9 }
+            ],
+            baseLine: { a: { x: 3, y: 33 }, b: { x: 37, y: 3 } },
+            lines: [
+              { a: { x: 22, y: 16.2353 }, b: { x: 22, y: 9.1642 }, target: 'baseLine' }
+            ]
+          }
+        }
+      };
+
+      const clone = value => JSON.parse(JSON.stringify(value));
+      let state = clone(initial);
+      let drag = null;
+
+      const lengthInput = document.getElementById('lineLength');
+      const lengthValue = document.getElementById('lineLengthValue');
+      const output = document.getElementById('coordinateOutput');
+      const finishStatus = document.getElementById('finishStatus');
+      const moveLineButton = document.getElementById('moveLineButton');
+      const moveCircleButton = document.getElementById('moveCircleButton');
+      let mode = 'line';
+
+      const fmt = n => Number(n.toFixed(4)).toString();
+      const distance = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
+
+      function setAllLineLengths(length) {
+        Object.values(state.icons).forEach(icon => {
+          icon.lines.forEach(line => {
+            const current = distance(line.a, line.b) || 1;
+            const ux = (line.b.x - line.a.x) / current;
+            const uy = (line.b.y - line.a.y) / current;
+            line.b = { x: line.a.x + ux * length, y: line.a.y + uy * length };
+          });
+        });
+      }
+
+      function createPath(line, index) {
+        const path = document.createElementNS(NS, 'path');
+        path.setAttribute('d', `M${line.a.x} ${line.a.y}L${line.b.x} ${line.b.y}`);
+        path.setAttribute('class', 'impactLine');
+        path.dataset.line = String(index);
+        return path;
+      }
+
+      function renderShapes(iconKey) {
+        const icon = state.icons[iconKey];
+        icon.circles.forEach((circle, index) => {
+          document.querySelectorAll(`[data-circle-shape="${iconKey}-${index}"]`).forEach(element => {
+            element.setAttribute('cx', circle.cx);
+            element.setAttribute('cy', circle.cy);
+            element.setAttribute('r', circle.r);
+          });
+        });
+        if (icon.baseLine) {
+          document.querySelectorAll(`[data-base-shape="${iconKey}"]`).forEach(element => {
+            element.setAttribute('d', `M${icon.baseLine.a.x} ${icon.baseLine.a.y}L${icon.baseLine.b.x} ${icon.baseLine.b.y}`);
+          });
+        }
+      }
+
+      function renderIcon(iconKey) {
+        const icon = state.icons[iconKey];
+        const lineLayer = document.querySelector(`[data-lines="${iconKey}"]`);
+        const previewLayer = document.querySelector(`[data-preview-lines="${iconKey}"]`);
+        lineLayer.replaceChildren();
+        previewLayer.replaceChildren();
+        renderShapes(iconKey);
+
+        icon.lines.forEach((line, index) => {
+          lineLayer.append(createPath(line, index));
+          previewLayer.append(createPath(line, index));
+        });
+      }
+
+      function updateOutput() {
+        const s = state.icons.surface.lines[0];
+        const bb1 = state.icons.ballball.lines[0];
+        const bb2 = state.icons.ballball.lines[1];
+        const bl = state.icons.ballline.lines[0];
+        const sc = state.icons.surface.circles[0];
+        const bbc1 = state.icons.ballball.circles[0];
+        const bbc2 = state.icons.ballball.circles[1];
+        const blc = state.icons.ballline.circles[0];
+        const base = state.icons.ballline.baseLine;
+        output.textContent = [
+          `surface:   M${fmt(s.a.x)} ${fmt(s.a.y)}L${fmt(s.b.x)} ${fmt(s.b.y)}`,
+          `surface circle: ${fmt(sc.cx)}, ${fmt(sc.cy)}, r${fmt(sc.r)}`,
+          `ballball1: M${fmt(bb1.a.x)} ${fmt(bb1.a.y)}L${fmt(bb1.b.x)} ${fmt(bb1.b.y)}`,
+          `ballball2: M${fmt(bb2.a.x)} ${fmt(bb2.a.y)}L${fmt(bb2.b.x)} ${fmt(bb2.b.y)}`,
+          `ballball circles: ${fmt(bbc1.cx)}, ${fmt(bbc1.cy)} / ${fmt(bbc2.cx)}, ${fmt(bbc2.cy)}`,
+          `ballline:  M${fmt(bl.a.x)} ${fmt(bl.a.y)}L${fmt(bl.b.x)} ${fmt(bl.b.y)}`,
+          `ballline circle: ${fmt(blc.cx)}, ${fmt(blc.cy)}, r${fmt(blc.r)}`,
+          `ballline base: M${fmt(base.a.x)} ${fmt(base.a.y)}L${fmt(base.b.x)} ${fmt(base.b.y)}`
+        ].join('\n');
+        lengthValue.value = Number(state.length).toFixed(2);
+      }
+
+      function render() {
+        renderIcon('surface');
+        renderIcon('ballball');
+        renderIcon('ballline');
+        updateOutput();
+        finishStatus.classList.remove('isFinal');
+        finishStatus.textContent = '配置が決まったら確定してください。';
+      }
+
+      function svgPoint(svg, event) {
+        const point = svg.createSVGPoint();
+        point.x = event.clientX;
+        point.y = event.clientY;
+        return point.matrixTransform(svg.getScreenCTM().inverse());
+      }
+
+      document.querySelectorAll('[data-stage]').forEach(svg => {
+        svg.addEventListener('pointerdown', event => {
+          const iconKey = svg.dataset.stage;
+          const start = svgPoint(svg, event);
+
+          if (mode === 'line') {
+            const impact = event.target.closest('.impactLine');
+            const base = event.target.closest('[data-drag-base]');
+            if (impact) {
+              const lineIndex = Number(impact.dataset.line);
+              drag = {
+                type: 'line', svg, iconKey, lineIndex, start,
+                origin: clone(state.icons[iconKey].lines[lineIndex]),
+                pointerId: event.pointerId
+              };
+            } else if (base) {
+              drag = {
+                type: 'baseLine', svg, iconKey, start,
+                origin: clone(state.icons[iconKey].baseLine),
+                pointerId: event.pointerId
+              };
+            }
+          } else {
+            const circle = event.target.closest('[data-drag-circle]');
+            if (circle) {
+              const circleIndex = Number(circle.dataset.dragCircle);
+              drag = {
+                type: 'circle', svg, iconKey, circleIndex, start,
+                origin: clone(state.icons[iconKey].circles[circleIndex]),
+                pointerId: event.pointerId
+              };
+            }
+          }
+
+          if (!drag) return;
+          event.preventDefault();
+          svg.setPointerCapture(event.pointerId);
+        });
+
+        svg.addEventListener('pointermove', event => {
+          if (!drag || drag.svg !== svg || drag.pointerId !== event.pointerId) return;
+          const point = svgPoint(svg, event);
+          const dx = point.x - drag.start.x;
+          const dy = point.y - drag.start.y;
+
+          if (drag.type === 'line') {
+            const line = state.icons[drag.iconKey].lines[drag.lineIndex];
+            line.a = { x: drag.origin.a.x + dx, y: drag.origin.a.y + dy };
+            line.b = { x: drag.origin.b.x + dx, y: drag.origin.b.y + dy };
+          }
+          if (drag.type === 'circle') {
+            const circle = state.icons[drag.iconKey].circles[drag.circleIndex];
+            circle.cx = drag.origin.cx + dx;
+            circle.cy = drag.origin.cy + dy;
+          }
+          if (drag.type === 'baseLine') {
+            const base = state.icons[drag.iconKey].baseLine;
+            base.a = { x: drag.origin.a.x + dx, y: drag.origin.a.y + dy };
+            base.b = { x: drag.origin.b.x + dx, y: drag.origin.b.y + dy };
+          }
+          render();
+        });
+
+        const endDrag = event => {
+          if (!drag || drag.svg !== svg || drag.pointerId !== event.pointerId) return;
+          drag = null;
+          render();
+        };
+        svg.addEventListener('pointerup', endDrag);
+        svg.addEventListener('pointercancel', endDrag);
+      });
+
+      lengthInput.addEventListener('input', () => {
+        state.length = Number(lengthInput.value);
+        setAllLineLengths(state.length);
+        render();
+      });
+
+      function setMode(nextMode) {
+        mode = nextMode;
+        document.body.dataset.mode = mode;
+        moveLineButton.setAttribute('aria-pressed', String(mode === 'line'));
+        moveCircleButton.setAttribute('aria-pressed', String(mode === 'circle'));
+      }
+
+      moveLineButton.addEventListener('click', () => setMode('line'));
+      moveCircleButton.addEventListener('click', () => setMode('circle'));
+
+      document.getElementById('finishButton').addEventListener('click', () => {
+        updateOutput();
+        finishStatus.classList.add('isFinal');
+        finishStatus.textContent = '確定済み。この画面のままCodexへ「確定」と送ってください。';
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
