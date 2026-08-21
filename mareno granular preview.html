@@ -123,6 +123,146 @@ body {
   pointer-events: auto;
 }
 
+/* =========================================================
+   CHORD OBJECTS
+========================================================= */
+
+.chordObject {
+  position: fixed;
+  z-index: 30;
+  color: #111;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  font-family: Georgia, "Times New Roman", "Yu Mincho", serif;
+  font-weight: 700;
+  line-height: 0.9;
+  white-space: nowrap;
+  user-select: none;
+  cursor: grab;
+  touch-action: none;
+  transform-origin: 0 0;
+}
+
+.chordObject.selected {
+  outline: 1px dotted #111;
+  outline-offset: 5px;
+}
+
+.chordObject:active { cursor: grabbing; }
+.chordObject[contenteditable="true"] {
+  cursor: text;
+  outline: 1px solid #111;
+  outline-offset: 5px;
+  user-select: text;
+}
+
+#chordEditor[hidden] { display: none; }
+
+#chordEditor {
+  position: fixed;
+  left: 28px;
+  top: 80px;
+  z-index: 320;
+  width: 310px;
+  min-width: 250px;
+  min-height: 220px;
+  max-height: calc(100vh - 32px);
+  padding: 8px;
+  box-sizing: border-box;
+  overflow: auto;
+  resize: both;
+  background: #fff;
+  color: #111;
+  border: 1px solid #111;
+  box-shadow: none;
+}
+
+#chordEditorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -8px -8px 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #111;
+  cursor: move;
+  user-select: none;
+}
+
+#closeChordEditor {
+  border: 0;
+  background: transparent;
+  color: #111;
+  font: inherit;
+  cursor: pointer;
+}
+
+#chordText {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #111;
+}
+
+#chordNotation {
+  margin-top: 7px;
+  font-size: 11px;
+}
+
+#chordNotation summary {
+  cursor: pointer;
+  user-select: none;
+}
+
+#chordNotation table {
+  width: 100%;
+  margin-top: 5px;
+  border-collapse: collapse;
+}
+
+#chordNotation th,
+#chordNotation td {
+  padding: 2px 4px 2px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.16);
+  text-align: left;
+  vertical-align: top;
+  font-weight: normal;
+}
+
+#chordNotation code,
+#chordNotation td:first-child {
+  font-family: monospace;
+  text-transform: none;
+}
+
+.compactSelect {
+  width: 100%; min-width: 0; box-sizing: border-box;
+  border: 1px solid #111; border-radius: 0;
+  background: #fff; color: #111; font: inherit;
+}
+
+#chordBuilderGrid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 4px 6px; margin-top: 7px;
+}
+#chordBuilderGrid label { display: grid; gap: 2px; }
+#chordEditor > details {
+  margin-top: 8px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(0,0,0,0.28);
+}
+#chordEditor > details > summary {
+  cursor: pointer;
+  user-select: none;
+}
+#fmControls[hidden] { display: none; }
+.effectToggle {
+  display: grid; grid-template-columns: minmax(92px, 1fr) 72px 34px;
+  align-items: center; gap: 5px;
+}
+
 
 
 /* =========================================================
@@ -1179,6 +1319,10 @@ button:hover {
   margin: 0;
 }
 
+#layoutGrabTool .grabResumeMark { display: none; }
+#layoutGrabTool.active .grabStopMark { display: none; }
+#layoutGrabTool.active .grabResumeMark { display: inline; }
+
 .eventIconLarge {
   width: 30px;
   height: 22px;
@@ -1242,11 +1386,21 @@ button:hover {
 
   <div class="toolGroup ballGroup">
 
+    <div class="toolRow grabGroup">
+      <button id="layoutGrabTool" class="forceButton" title="grab / stop" aria-label="grab and stop">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5.8 11V7.1a1.25 1.25 0 0 1 2.5 0v3.1M8.3 10.2V5.8a1.25 1.25 0 0 1 2.5 0v4.4M10.8 10.2V6.4a1.25 1.25 0 0 1 2.5 0v4.3M13.3 10.7V8.4a1.25 1.25 0 0 1 2.5 0v4.4c0 3.7-2.2 6.1-5.6 6.1h-.9c-1.8 0-3.1-.7-4.1-2.1l-2.1-3.2a1.3 1.3 0 0 1 2.1-1.5l.6.8V11" />
+          <g class="grabStopMark"><path d="M18.5 15.5v5M21.5 15.5v5" /></g>
+          <g class="grabResumeMark"><path d="M18.2 15.2l4 2.8-4 2.8z" /></g>
+        </svg>
+      </button>
+    </div>
+
     <div class="ballTitleRow">
       <div class="toolGroupTitle">ball</div>
 
       <div id="modeControls">
-        <button id="straightMode" class="modeButton active" title="straight">
+        <button id="straightMode" class="modeButton" title="straight">
           <svg class="referenceSvg straightReferenceIcon" viewBox="0 0 26 25" aria-hidden="true">
             <circle cx="8" cy="17" r="5" />
             <path d="M12 13L23 2" />
@@ -1254,7 +1408,7 @@ button:hover {
           </svg>
           <span>straight</span>
         </button>
-        <button id="bounceMode" class="modeButton" title="bounce">
+        <button id="bounceMode" class="modeButton active" title="bounce">
           <svg class="referenceSvg bounceReferenceIcon" viewBox="0 0 44 22" aria-hidden="true">
             <path d="M2 20h40" />
             <path d="M4.152 16.944C11.152 6.944 21.152 5.944 29.152 12.944" />
@@ -1284,7 +1438,7 @@ button:hover {
     </div>
 
     <div class="ballActionRow">
-      <button id="grabTool" class="forceButton" title="grab" aria-label="grab">
+      <button id="grabTool" class="forceButton" title="attract" aria-label="attract">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 3v6M9.5 6.5L12 9l2.5-2.5" />
           <path d="M21 12h-6M17.5 9.5L15 12l2.5 2.5" />
@@ -1344,10 +1498,6 @@ button:hover {
       <span id="frictionValue" class="value">0.25</span>
     </div>
 
-    <div class="ballTransportRow">
-      <button id="stopBallsButton" class="transportButton">stop</button>
-    </div>
-
     <input id="ballCount" type="hidden" value="0">
 
   </div>
@@ -1384,6 +1534,200 @@ button:hover {
 
   </div>
 
+  <div class="toolGroup chordGroup">
+    <div class="toolGroupTitle">chord object</div>
+    <div class="toolRow">
+      <button id="addChordButton" class="toolButton" title="add chord">＋ chord</button>
+      <button id="removeChordButton" class="toolButton" title="remove selected chord">−</button>
+    </div>
+    <div id="chordEditor" hidden>
+      <div id="chordEditorHeader"><span>chord resonance</span><button id="closeChordEditor" type="button">×</button></div>
+      <div class="control">
+        <span>chord</span>
+        <input id="chordText" type="text" value="Cm7" spellcheck="false">
+      </div>
+      <div class="control">
+        <span>sound chord</span>
+        <span id="resolvedChordValue" class="value">Cm7</span>
+      </div>
+      <div class="control">
+        <span>size</span>
+        <input id="chordSize" type="range" min="32" max="240" value="112" step="1">
+        <span id="chordSizeValue" class="value">112</span>
+      </div>
+      <details id="chordResonator" open>
+        <summary>chord engine</summary>
+      <div class="control">
+        <span>engine</span>
+        <select id="chordEngine" class="compactSelect">
+          <option value="resonator">resonator</option>
+          <option value="oscillator">oscillator</option>
+          <option value="fm">FM</option>
+        </select>
+      </div>
+      <div id="oscillatorControls" hidden>
+        <div class="control">
+          <span>wave</span>
+          <select id="chordOscWave" class="compactSelect">
+            <option value="sine">sine</option>
+            <option value="triangle">triangle</option>
+            <option value="sawtooth">saw</option>
+            <option value="square">square</option>
+          </select>
+        </div>
+      </div>
+      <div id="physicalControls" hidden>
+        <div class="control">
+          <span>material</span>
+          <select id="chordPhysicalMaterial" class="compactSelect">
+            <option value="string">string</option>
+            <option value="wood">wood</option>
+            <option value="metal">metal</option>
+            <option value="glass">glass</option>
+          </select>
+        </div>
+      </div>
+      <div id="fmControls" hidden>
+        <div class="control">
+          <span>algorithm</span>
+          <select id="chordFmAlgorithm" class="compactSelect">
+            <option value="epiano">electric piano</option>
+            <option value="bell">bell</option>
+            <option value="brass">brass</option>
+            <option value="digital">digital</option>
+          </select>
+        </div>
+        <div class="control">
+          <span>ratio</span>
+          <input id="chordFmRatio" type="range" min="0.25" max="8" value="2" step="0.05">
+          <span id="chordFmRatioValue" class="value">2.00</span>
+        </div>
+        <div class="control">
+          <span>index</span>
+          <input id="chordFmIndex" type="range" min="0" max="100" value="28" step="1">
+          <span id="chordFmIndexValue" class="value">28%</span>
+        </div>
+        <div class="control">
+          <span>feedback</span>
+          <input id="chordFmFeedback" type="range" min="0" max="100" value="12" step="1">
+          <span id="chordFmFeedbackValue" class="value">12%</span>
+        </div>
+      </div>
+      <div class="control">
+        <span>resonance</span>
+        <input id="chordResonance" type="range" min="0" max="100" value="55" step="1">
+        <span id="chordResonanceValue" class="value">55%</span>
+      </div>
+      <div class="control">
+        <span>timbre</span>
+        <input id="chordTimbre" type="range" min="0" max="100" value="50" step="1">
+        <span id="chordTimbreValue" class="value">50%</span>
+      </div>
+      <div class="control">
+        <span>volume</span>
+        <input id="chordVolume" type="range" min="0" max="200" value="100" step="1">
+        <span id="chordVolumeValue" class="value">100%</span>
+      </div>
+      <div class="control">
+        <span>decay</span>
+        <input id="chordDecay" type="range" min="25" max="400" value="140" step="1">
+        <span id="chordDecayValue" class="value">140%</span>
+      </div>
+      <div class="control">
+        <span>brightness</span>
+        <input id="chordBrightness" type="range" min="0" max="100" value="55" step="1">
+        <span id="chordBrightnessValue" class="value">55%</span>
+      </div>
+      <div class="control">
+        <span>spread</span>
+        <input id="chordSpread" type="range" min="0" max="100" value="35" step="1">
+        <span id="chordSpreadValue" class="value">35%</span>
+      </div>
+      <div class="control">
+        <span>attack</span>
+        <input id="chordAttack" type="range" min="0" max="500" value="12" step="1">
+        <span id="chordAttackValue" class="value">12ms</span>
+      </div>
+      <div class="control">
+        <span>octave</span>
+        <input id="chordOctave" type="range" min="-2" max="2" value="0" step="1">
+        <span id="chordOctaveValue" class="value">0</span>
+      </div>
+      <div class="control">
+        <span>detune</span>
+        <input id="chordDetune" type="range" min="-50" max="50" value="0" step="1">
+        <span id="chordDetuneValue" class="value">0ct</span>
+      </div>
+      <div class="control">
+        <span>glide</span>
+        <input id="chordGlide" type="range" min="0" max="2000" value="0" step="10">
+        <span id="chordGlideValue" class="value">0ms</span>
+      </div>
+      <div class="control">
+        <span>drive</span>
+        <input id="chordDrive" type="range" min="0" max="100" value="0" step="1">
+        <span id="chordDriveValue" class="value">0%</span>
+      </div>
+      </details>
+      <details id="chordSample" open>
+        <summary>ball * chord sample</summary>
+        <input id="chordFile" class="fileInput" type="file" accept="audio/*">
+        <div class="control">
+          <span>volume</span>
+          <input id="chordSampleVolume" type="range" min="0" max="200" value="100" step="1">
+          <span id="chordSampleVolumeValue" class="value">100%</span>
+        </div>
+        <div class="control">
+          <span>size</span>
+          <input id="chordSampleSize" type="range" min="0.01" max="2" value="1" step="0.01">
+          <span id="chordSampleSizeValue" class="value">1.00</span>
+        </div>
+        <div class="control">
+          <span>position</span>
+          <input id="chordSamplePosition" type="range" min="0" max="1" value="0.5" step="0.01">
+          <span id="chordSamplePositionValue" class="value">0.50</span>
+        </div>
+        <div class="control">
+          <span>spread</span>
+          <input id="chordSampleSpread" type="range" min="0" max="1" value="0.2" step="0.01">
+          <span id="chordSampleSpreadValue" class="value">0.20</span>
+        </div>
+        <div class="control">
+          <span>pitch</span>
+          <input id="chordSamplePitch" type="range" min="0.25" max="2.5" value="1" step="0.01">
+          <span id="chordSamplePitchValue" class="value">1.00</span>
+        </div>
+      </details>
+      <details id="chordBuilder" open>
+        <summary>chord builder</summary>
+        <div id="chordBuilderGrid">
+          <label>root<select id="builderRoot" class="compactSelect"><option>C</option><option>C♯</option><option>D♭</option><option>D</option><option>E♭</option><option>E</option><option>F</option><option>F♯</option><option>G♭</option><option>G</option><option>A♭</option><option>A</option><option>B♭</option><option>B</option></select></label>
+          <label>quality<select id="builderQuality" class="compactSelect"><option value="">major</option><option value="m">minor</option><option value="sus2">sus2</option><option value="sus4">sus4</option><option value="dim">dim</option><option value="aug">aug</option></select></label>
+          <label>7th<select id="builderSeventh" class="compactSelect"><option value="">none</option><option value="7">7</option><option value="△7">△7</option></select></label>
+          <label>extension<select id="builderExtension" class="compactSelect"><option value="">none</option><option>6</option><option>9</option><option>11</option><option>13</option></select></label>
+          <label>alteration<select id="builderAlteration" class="compactSelect"><option value="">none</option><option>♭5</option><option>♯5</option><option>♭9</option><option>♯9</option><option>♯11</option><option>♭13</option></select></label>
+          <label>add<select id="builderAdd" class="compactSelect"><option value="">none</option><option>add2</option><option>add4</option><option>add6</option><option>add9</option><option>add11</option><option>add13</option></select></label>
+        </div>
+      </details>
+      <details id="chordNotation">
+        <summary>notation</summary>
+        <table>
+          <tr><th>input</th><th>meaning</th></tr>
+          <tr><td><code>C</code></td><td>C major</td></tr>
+          <tr><td><code>Cm</code></td><td>C minor</td></tr>
+          <tr><td><code>C7</code></td><td>dominant 7</td></tr>
+          <tr><td><code>Cmaj7 / CM7 / C△7 / CΔ7</code></td><td>major 7</td></tr>
+          <tr><td><code>Cm7</code></td><td>minor 7</td></tr>
+          <tr><td><code>Am7b9 / Am7♭9</code></td><td>flat 9</td></tr>
+          <tr><td><code>C7#9 / C7♯9</code></td><td>sharp 9</td></tr>
+          <tr><td><code>Cm7b5 / Cm7♭5</code></td><td>flat 5</td></tr>
+          <tr><td><code>C# / C♯</code></td><td>sharp root</td></tr>
+          <tr><td><code>Bb / B♭</code></td><td>flat root</td></tr>
+        </table>
+      </details>
+    </div>
+  </div>
+
   <!-- =====================================================
        EVENT AUDIO
   ====================================================== -->
@@ -1394,6 +1738,10 @@ button:hover {
       sound
     </div>
 
+    <div class="control">
+      <span>tone</span>
+      <select id="toneWave" class="compactSelect"><option>sine</option><option>triangle</option><option>sawtooth</option><option>square</option><option>noise</option></select>
+    </div>
 
     <!-- SURFACE -->
 
@@ -1418,6 +1766,11 @@ button:hover {
       >
 
       <div class="control">
+        <span>source</span>
+        <select id="surfaceSource" class="compactSelect"><option value="sample">sample</option><option value="tone">tone</option></select>
+      </div>
+
+      <div class="control">
 
         <span>volume</span>
 
@@ -1434,7 +1787,7 @@ button:hover {
           id="surfaceVolumeValue"
           class="value"
         >
-          1.00
+          100%
         </span>
 
       </div>
@@ -1448,7 +1801,7 @@ button:hover {
           id="surfaceSize"
           type="range"
           min="0.01"
-          max="1"
+          max="2"
           value="0.08"
           step="0.01"
         >
@@ -1488,24 +1841,30 @@ button:hover {
 
       <div class="control">
 
-        <span>speed</span>
+        <span>position</span>
 
         <input
-          id="surfaceSpeed"
+          id="surfacePosition"
           type="range"
           min="0"
-          max="2"
+          max="1"
           value="0.5"
           step="0.01"
         >
 
         <span
-          id="surfaceSpeedValue"
+          id="surfacePositionValue"
           class="value"
         >
           0.50
         </span>
 
+      </div>
+
+      <div class="control">
+        <span>spread</span>
+        <input id="surfaceSpread" type="range" min="0" max="1" value="0.20" step="0.01">
+        <span id="surfaceSpreadValue" class="value">0.20</span>
       </div>
 
 
@@ -1526,10 +1885,16 @@ button:hover {
           id="surfacePitchValue"
           class="value"
         >
-          1.00
+          100%
         </span>
 
       </div>
+
+      <div class="effectToggle"><span>frequency shift</span><input id="surfaceFrequencyShift" type="range" min="0" max="100" value="0"><span id="surfaceFrequencyShiftValue">0</span></div>
+      <div class="effectToggle"><span>spectral blur</span><input id="surfaceSpectralBlur" type="range" min="0" max="100" value="0"><span id="surfaceSpectralBlurValue">0</span></div>
+      <div class="effectToggle"><span>spectral freeze</span><input id="surfaceSpectralFreeze" type="range" min="0" max="100" value="0"><span id="surfaceSpectralFreezeValue">0</span></div>
+      <div class="effectToggle"><span>wavefold</span><input id="surfaceWavefold" type="range" min="0" max="100" value="0"><span id="surfaceWavefoldValue">0</span></div>
+      <div class="effectToggle"><span>clipping</span><input id="surfaceClipping" type="range" min="0" max="100" value="0"><span id="surfaceClippingValue">0</span></div>
 
     </div>
 
@@ -1558,6 +1923,11 @@ button:hover {
       >
 
       <div class="control">
+        <span>source</span>
+        <select id="ballSource" class="compactSelect"><option value="sample">sample</option><option value="tone">tone</option></select>
+      </div>
+
+      <div class="control">
 
         <span>volume</span>
 
@@ -1574,7 +1944,7 @@ button:hover {
           id="ballVolumeValue"
           class="value"
         >
-          1.00
+          100%
         </span>
 
       </div>
@@ -1588,7 +1958,7 @@ button:hover {
           id="ballSize"
           type="range"
           min="0.01"
-          max="1"
+          max="2"
           value="0.15"
           step="0.01"
         >
@@ -1628,24 +1998,30 @@ button:hover {
 
       <div class="control">
 
-        <span>speed</span>
+        <span>position</span>
 
         <input
-          id="ballSpeedAudio"
+          id="ballPosition"
           type="range"
           min="0"
-          max="2"
-          value="0.8"
+          max="1"
+          value="0.5"
           step="0.01"
         >
 
         <span
-          id="ballSpeedAudioValue"
+          id="ballPositionValue"
           class="value"
         >
-          0.80
+          0.50
         </span>
 
+      </div>
+
+      <div class="control">
+        <span>spread</span>
+        <input id="ballSpread" type="range" min="0" max="1" value="0.20" step="0.01">
+        <span id="ballSpreadValue" class="value">0.20</span>
       </div>
 
 
@@ -1671,6 +2047,12 @@ button:hover {
 
       </div>
 
+      <div class="effectToggle"><span>frequency shift</span><input id="ballFrequencyShift" type="range" min="0" max="100" value="0"><span id="ballFrequencyShiftValue">0</span></div>
+      <div class="effectToggle"><span>spectral blur</span><input id="ballSpectralBlur" type="range" min="0" max="100" value="0"><span id="ballSpectralBlurValue">0</span></div>
+      <div class="effectToggle"><span>spectral freeze</span><input id="ballSpectralFreeze" type="range" min="0" max="100" value="0"><span id="ballSpectralFreezeValue">0</span></div>
+      <div class="effectToggle"><span>wavefold</span><input id="ballWavefold" type="range" min="0" max="100" value="0"><span id="ballWavefoldValue">0</span></div>
+      <div class="effectToggle"><span>clipping</span><input id="ballClipping" type="range" min="0" max="100" value="0"><span id="ballClippingValue">0</span></div>
+
     </div>
 
 
@@ -1695,6 +2077,11 @@ button:hover {
         type="file"
         accept="audio/*"
       >
+
+      <div class="control">
+        <span>source</span>
+        <select id="lineSource" class="compactSelect"><option value="sample">sample</option><option value="tone">tone</option></select>
+      </div>
 
       <div class="control">
 
@@ -1727,7 +2114,7 @@ button:hover {
           id="lineSize"
           type="range"
           min="0.01"
-          max="1"
+          max="2"
           value="0.10"
           step="0.01"
         >
@@ -1767,24 +2154,30 @@ button:hover {
 
       <div class="control">
 
-        <span>speed</span>
+        <span>position</span>
 
         <input
-          id="lineSpeed"
+          id="linePosition"
           type="range"
           min="0"
-          max="2"
-          value="0.7"
+          max="1"
+          value="0.5"
           step="0.01"
         >
 
         <span
-          id="lineSpeedValue"
+          id="linePositionValue"
           class="value"
         >
-          0.70
+          0.50
         </span>
 
+      </div>
+
+      <div class="control">
+        <span>spread</span>
+        <input id="lineSpread" type="range" min="0" max="1" value="0.20" step="0.01">
+        <span id="lineSpreadValue" class="value">0.20</span>
       </div>
 
 
@@ -1810,8 +2203,13 @@ button:hover {
 
       </div>
 
-    </div>
+      <div class="effectToggle"><span>frequency shift</span><input id="lineFrequencyShift" type="range" min="0" max="100" value="0"><span id="lineFrequencyShiftValue">0</span></div>
+      <div class="effectToggle"><span>spectral blur</span><input id="lineSpectralBlur" type="range" min="0" max="100" value="0"><span id="lineSpectralBlurValue">0</span></div>
+      <div class="effectToggle"><span>spectral freeze</span><input id="lineSpectralFreeze" type="range" min="0" max="100" value="0"><span id="lineSpectralFreezeValue">0</span></div>
+      <div class="effectToggle"><span>wavefold</span><input id="lineWavefold" type="range" min="0" max="100" value="0"><span id="lineWavefoldValue">0</span></div>
+      <div class="effectToggle"><span>clipping</span><input id="lineClipping" type="range" min="0" max="100" value="0"><span id="lineClippingValue">0</span></div>
 
+    </div>
 
     <button id="randomizeButton">
       randomize
@@ -2036,6 +2434,8 @@ function initAudio() {
 
   }
 
+  ensureBuiltInChordSample();
+
   audioUnlocked = true;
 
 }
@@ -2060,9 +2460,55 @@ const audioFiles = {
 
   surface: null,
   ball: null,
-  line: null
+  line: null,
+  chord: null
 
 };
+
+function ensureBuiltInChordSample() {
+  if (!audioContext || audioFiles.chord) return;
+  const duration = 0.48;
+  const length = Math.ceil(audioContext.sampleRate * duration);
+  const buffer = audioContext.createBuffer(1, length, audioContext.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i++) {
+    const t = i / audioContext.sampleRate;
+    const noise = (Math.random() * 2 - 1) * Math.exp(-t * 24) * 0.48;
+    const body = Math.sin(2 * Math.PI * 92 * t) * Math.exp(-t * 11) * 0.34;
+    const edge = Math.sin(2 * Math.PI * 310 * t) * Math.exp(-t * 19) * 0.16;
+    data[i] = noise + body + edge;
+  }
+  data[0] = 1;
+  audioFiles.chord = buffer;
+}
+
+const performanceAudio = {
+  sources: { surface: "sample", ball: "sample", line: "sample" },
+  wave: "sine",
+  effects: {
+    surface: { frequencyShift: 0, spectralBlur: 0, spectralFreeze: 0, wavefold: 0, clipping: 0 },
+    ball: { frequencyShift: 0, spectralBlur: 0, spectralFreeze: 0, wavefold: 0, clipping: 0 },
+    line: { frequencyShift: 0, spectralBlur: 0, spectralFreeze: 0, wavefold: 0, clipping: 0 }
+  }
+};
+
+for (const type of ["surface", "ball", "line"]) {
+  for (const key of ["FrequencyShift", "SpectralBlur", "SpectralFreeze", "Wavefold", "Clipping"]) {
+    const id = type + key;
+    const input = document.getElementById(id);
+    const property = key[0].toLowerCase() + key.slice(1);
+    input.addEventListener("input", () => {
+      performanceAudio.effects[type][property] = parseFloat(input.value) / 100;
+      document.getElementById(id + "Value").textContent = input.value;
+    });
+  }
+}
+for (const type of ["surface", "ball", "line"]) {
+  document.getElementById(type + "Source").addEventListener("change", event => {
+    performanceAudio.sources[type] = event.target.value;
+  });
+}
+document.getElementById("toneWave").addEventListener("change", e => performanceAudio.wave = e.target.value);
 
 
 async function loadAudio(
@@ -2089,7 +2535,8 @@ async function loadAudio(
 [
   "surface",
   "ball",
-  "line"
+  "line",
+  "chord"
 
 ].forEach(
   type => {
@@ -2128,7 +2575,7 @@ function setupCustomFileInputs() {
     button.textContent = 'choose file';
     const name = document.createElement('span');
     name.className = 'filePickerName';
-    name.textContent = 'no file';
+    name.textContent = input.id === 'chordFile' ? 'built-in sample' : 'no file';
     button.addEventListener('click', () => input.click());
     input.addEventListener('change', () => {
       name.textContent = input.files && input.files[0]
@@ -2166,9 +2613,14 @@ const eventParameters = {
         "surfaceDensity"
       ),
 
-    speed:
+    position:
       document.getElementById(
-        "surfaceSpeed"
+        "surfacePosition"
+      ),
+
+    spread:
+      document.getElementById(
+        "surfaceSpread"
       ),
 
     pitch:
@@ -2196,9 +2648,14 @@ const eventParameters = {
         "ballDensity"
       ),
 
-    speed:
+    position:
       document.getElementById(
-        "ballSpeedAudio"
+        "ballPosition"
+      ),
+
+    spread:
+      document.getElementById(
+        "ballSpread"
       ),
 
     pitch:
@@ -2226,9 +2683,14 @@ const eventParameters = {
         "lineDensity"
       ),
 
-    speed:
+    position:
       document.getElementById(
-        "lineSpeed"
+        "linePosition"
+      ),
+
+    spread:
+      document.getElementById(
+        "lineSpread"
       ),
 
     pitch:
@@ -2236,6 +2698,14 @@ const eventParameters = {
         "linePitch"
       )
 
+  },
+
+  chord: {
+    volume: document.getElementById("chordSampleVolume"),
+    size: document.getElementById("chordSampleSize"),
+    position: document.getElementById("chordSamplePosition"),
+    spread: document.getElementById("chordSampleSpread"),
+    pitch: document.getElementById("chordSamplePitch")
   }
 
 };
@@ -2266,14 +2736,22 @@ function bindValue(
         input.step || 1
       );
 
-    output.textContent =
-      Number(
-        input.value
-      ).toFixed(
-        step < 1
-          ? 2
-          : 0
-      );
+    if (["surfaceVolume", "ballVolume", "lineVolume"].includes(id)) {
+      output.textContent = Math.round(Number(input.value) * 100) + "%";
+    }
+    else if (id === "chordSampleVolume") {
+      output.textContent = Math.round(Number(input.value)) + "%";
+    }
+    else {
+      output.textContent =
+        Number(
+          input.value
+        ).toFixed(
+          step < 1
+            ? 2
+            : 0
+        );
+    }
 
   }
 
@@ -2292,20 +2770,29 @@ const parameterIDs = [
   "surfaceVolume",
   "surfaceSize",
   "surfaceDensity",
-  "surfaceSpeed",
+  "surfacePosition",
+  "surfaceSpread",
   "surfacePitch",
 
   "ballVolume",
   "ballSize",
   "ballDensity",
-  "ballSpeedAudio",
+  "ballPosition",
+  "ballSpread",
   "ballPitch",
 
   "lineVolume",
   "lineSize",
   "lineDensity",
-  "lineSpeed",
+  "linePosition",
+  "lineSpread",
   "linePitch",
+
+  "chordSampleSize",
+  "chordSampleVolume",
+  "chordSamplePosition",
+  "chordSampleSpread",
+  "chordSamplePitch",
 
 
   "ballVelocity"
@@ -2424,9 +2911,10 @@ function startContactHold(type, position, contactKey) {
   const pitch = parseFloat(p.pitch.value);
   const volume = parseFloat(p.volume.value);
 
-  const normalizedPosition = position === null
-    ? grainPosition[type]
-    : Math.max(0, Math.min(1, position));
+  const normalizedPosition = Math.max(0, Math.min(1,
+    parseFloat(p.position.value) +
+    (Math.random() - 0.5) * parseFloat(p.spread.value)
+  ));
 
   const loopDuration = Math.min(
     buffer.duration,
@@ -2505,16 +2993,114 @@ function capBallVelocity(ball) {
   }
 }
 
+function connectPerformanceProcessing(type, source, destination, duration, physics = null) {
+  const physical = physics || {};
+  const fx = performanceAudio.effects[type];
+  const impact = Math.max(0, Math.min(1, (physical.impact || 0) / 12));
+  const angle = Math.max(-1, Math.min(1, physical.angle || 0));
+  const drive = audioContext.createGain();
+  const shaper = audioContext.createWaveShaper();
+  const fold = Math.min(1, fx.wavefold + impact * 0.65);
+  const clip = Math.min(1, fx.clipping + impact * 0.45);
+  const curve = new Float32Array(256);
+  for (let i = 0; i < curve.length; i++) {
+    const x = i / (curve.length - 1) * 2 - 1;
+    const folded = fold > 0.01 ? Math.sin(x * (1 + fold * 8) * Math.PI * 0.5) : x;
+    const ceiling = Math.max(0.12, 1 - clip * 0.82);
+    curve[i] = Math.max(-ceiling, Math.min(ceiling, folded)) / ceiling;
+  }
+  shaper.curve = curve;
+  shaper.oversample = "2x";
+  drive.gain.value = 1 + clip * 3;
+
+  const direct = audioContext.createGain();
+  const shifted = audioContext.createGain();
+  const shiftMix = Math.min(0.82, fx.frequencyShift * Math.abs(angle));
+  direct.gain.value = 1 - shiftMix;
+  shifted.gain.value = shiftMix;
+  const mod = audioContext.createOscillator();
+  const depth = audioContext.createGain();
+  mod.frequency.value = 4 + fx.frequencyShift * 180;
+  depth.gain.value = 0.8;
+
+  const blurDelay = audioContext.createDelay(0.35);
+  const blurFilter = audioContext.createBiquadFilter();
+  const blurWet = audioContext.createGain();
+  const blur = Math.min(1, fx.spectralBlur + Math.max(0, (physical.contactAge || 0) - 0.2) * 0.18);
+  blurDelay.delayTime.value = 0.025 + blur * 0.16;
+  blurFilter.type = "lowpass";
+  blurFilter.frequency.value = 9000 - blur * 7900;
+  blurWet.gain.value = blur * 0.90;
+
+  source.connect(drive); drive.connect(shaper);
+  shaper.connect(direct); direct.connect(destination);
+  shaper.connect(shifted); shifted.connect(destination);
+  mod.connect(depth); depth.connect(shifted.gain);
+  shaper.connect(blurDelay); blurDelay.connect(blurFilter); blurFilter.connect(blurWet); blurWet.connect(destination);
+
+  const freeze = fx.spectralFreeze;
+  if (freeze > 0.01) {
+    const freezeDelay = audioContext.createDelay(0.5);
+    const feedback = audioContext.createGain();
+    const freezeWet = audioContext.createGain();
+    freezeDelay.delayTime.value = 0.12 + freeze * 0.24;
+    const freezeFilter = audioContext.createBiquadFilter();
+    freezeFilter.type = "lowpass";
+    freezeFilter.frequency.value = 5200 - freeze * 2500;
+    feedback.gain.value = Math.min(0.93, freeze * 0.92);
+    freezeWet.gain.value = freeze * 0.82;
+    shaper.connect(freezeDelay); freezeDelay.connect(freezeFilter);
+    freezeFilter.connect(feedback); feedback.connect(freezeDelay);
+    freezeFilter.connect(freezeWet); freezeWet.connect(destination);
+    setTimeout(() => {
+      for (const node of [freezeDelay, freezeFilter, feedback, freezeWet]) {
+        try { node.disconnect(); } catch (_) {}
+      }
+    }, Math.ceil((duration + 8) * 1000));
+  }
+  mod.start(); mod.stop(audioContext.currentTime + duration + 0.5);
+}
+
+function playToneGrain(type, physics = null) {
+  if (!audioUnlocked || !audioContext) return;
+  const p = eventParameters[type];
+  const duration = Math.max(0.025, parseFloat(p.size.value));
+  const volume = parseFloat(p.volume.value);
+  const pitch = parseFloat(p.pitch.value);
+  const now = audioContext.currentTime;
+  const gain = audioContext.createGain();
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.linearRampToValueAtTime(0.16 * volume, now + 0.008);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  let source;
+  if (performanceAudio.wave === "noise") {
+    const buffer = audioContext.createBuffer(1, Math.ceil(duration * audioContext.sampleRate), audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    source = audioContext.createBufferSource(); source.buffer = buffer;
+  } else {
+    source = audioContext.createOscillator();
+    source.type = performanceAudio.wave;
+    source.frequency.value = ({surface:110, ball:164.81, line:220}[type] || 110) * pitch;
+  }
+  connectPerformanceProcessing(type, source, gain, duration, physics);
+  gain.connect(audioContext.destination);
+  if (recordingDestination) gain.connect(recordingDestination);
+  source.start(now); source.stop(now + duration + 0.02);
+}
+
 function playGrain(
   type,
-  positionOverride = null
+  positionOverride = null,
+  physics = null
 ) {
 
-  if (
-    !audioUnlocked ||
-    !audioContext ||
-    !audioFiles[type]
-  ) {
+  if (performanceAudio.sources[type] === "tone") {
+    playToneGrain(type, physics);
+    return;
+  }
+
+  if (!audioUnlocked || !audioContext || !audioFiles[type]) {
 
     return;
 
@@ -2532,11 +3118,6 @@ function playGrain(
       p.size.value
     );
 
-  const speed =
-    parseFloat(
-      p.speed.value
-    );
-
   const pitch =
     parseFloat(
       p.pitch.value
@@ -2551,42 +3132,10 @@ function playGrain(
   let position;
 
 
-  if (
-    positionOverride !==
-    null
-  ) {
-
-    position =
-      Math.max(
-        0,
-        Math.min(
-          1,
-          positionOverride
-        )
-      );
-
-  }
-
-  else {
-
-    grainPosition[type] +=
-      0.008 *
-      speed;
-
-    if (
-      grainPosition[type] >
-      1
-    ) {
-
-      grainPosition[type] -=
-        1;
-
-    }
-
-    position =
-      grainPosition[type];
-
-  }
+  const center = parseFloat(p.position.value);
+  const spread = parseFloat(p.spread.value);
+  position = Math.max(0, Math.min(1, center + (Math.random() - 0.5) * spread));
+  grainPosition[type] = position;
 
 
   const duration =
@@ -2650,9 +3199,81 @@ function playGrain(
   );
 
 
-  source.connect(
-    gain
-  );
+  const physical = physics || {};
+  const fx = performanceAudio.effects[type];
+  const impact = Math.max(0, Math.min(1, (physical.impact || 0) / 12));
+  const angleAmount = Math.max(-1, Math.min(1, physical.angle || 0));
+  const contactAge = Math.max(0, physical.contactAge || 0);
+  const drive = audioContext.createGain();
+  const fold = audioContext.createWaveShaper();
+  const samples = 256;
+  const curve = new Float32Array(samples);
+  const userFold = fx.wavefold;
+  const userClip = fx.clipping;
+  const foldAmount = Math.max(1, 1 + impact * impact * 8 + userFold * 10);
+  for (let i = 0; i < samples; i++) {
+    const x = i / (samples - 1) * 2 - 1;
+    const driven = x * foldAmount;
+    curve[i] = impact < 0.12 && userFold < 0.01 && userClip < 0.01
+      ? x
+      : Math.max(-1 + userClip * 0.75, Math.min(1 - userClip * 0.75,
+          Math.sin(driven * Math.PI * 0.5))) / Math.max(0.25, 1 - userClip * 0.75);
+  }
+  fold.curve = curve;
+  fold.oversample = "2x";
+  drive.gain.value = 1 + impact * 1.8;
+
+  const dryAngle = audioContext.createGain();
+  const ring = audioContext.createGain();
+  const ringMix = Math.min(0.82, Math.abs(angleAmount) * (0.18 + fx.frequencyShift * 0.64));
+  dryAngle.gain.value = 1 - ringMix;
+  ring.gain.value = 0;
+  const shiftOsc = audioContext.createOscillator();
+  const shiftDepth = audioContext.createGain();
+  shiftOsc.frequency.value = 8 + Math.abs(angleAmount) * (20 + fx.frequencyShift * 180);
+  shiftDepth.gain.value = ringMix;
+  shiftOsc.connect(shiftDepth);
+  shiftDepth.connect(ring.gain);
+
+  const blurDelay = audioContext.createDelay(0.18);
+  const blurFilter = audioContext.createBiquadFilter();
+  const blurGain = audioContext.createGain();
+  const blurAmount = Math.min(0.72, fx.spectralBlur * 0.62 + Math.max(0, contactAge - 0.18) * 0.22);
+  blurDelay.delayTime.value = 0.035 + Math.min(0.09, contactAge * 0.025);
+  blurFilter.type = "lowpass";
+  blurFilter.frequency.value = 7000 - blurAmount * 11000;
+  blurGain.gain.value = Math.min(0.90, blurAmount * 1.35);
+
+  source.connect(drive);
+  drive.connect(fold);
+  fold.connect(dryAngle);
+  fold.connect(ring);
+  dryAngle.connect(gain);
+  ring.connect(gain);
+  fold.connect(blurDelay);
+  blurDelay.connect(blurFilter);
+  blurFilter.connect(blurGain);
+  blurGain.connect(gain);
+
+  if (fx.spectralFreeze > 0.01) {
+    const freezeDelay = audioContext.createDelay(0.5);
+    const freezeFeedback = audioContext.createGain();
+    const freezeWet = audioContext.createGain();
+    freezeDelay.delayTime.value = 0.12 + fx.spectralFreeze * 0.24;
+    const freezeFilter = audioContext.createBiquadFilter();
+    freezeFilter.type = "lowpass";
+    freezeFilter.frequency.value = 5200 - fx.spectralFreeze * 2500;
+    freezeFeedback.gain.value = Math.min(0.93, fx.spectralFreeze * 0.92);
+    freezeWet.gain.value = fx.spectralFreeze * 0.82;
+    fold.connect(freezeDelay); freezeDelay.connect(freezeFilter);
+    freezeFilter.connect(freezeFeedback); freezeFeedback.connect(freezeDelay);
+    freezeFilter.connect(freezeWet); freezeWet.connect(gain);
+    setTimeout(() => {
+      for (const node of [freezeDelay, freezeFilter, freezeFeedback, freezeWet]) {
+        try { node.disconnect(); } catch (_) {}
+      }
+    }, Math.ceil((duration + 8) * 1000));
+  }
 
   gain.connect(
     audioContext.destination
@@ -2682,6 +3303,9 @@ function playGrain(
     0.02
   );
 
+  shiftOsc.start(now);
+  shiftOsc.stop(now + duration + 0.02);
+
 }
 
 
@@ -2691,12 +3315,11 @@ function playGrain(
 
 function triggerBurst(
   type,
-  position = null
+  position = null,
+  physics = null
 ) {
 
-  if (
-    !audioFiles[type]
-  ) {
+  if (performanceAudio.sources[type] !== "tone" && !audioFiles[type]) {
 
     return;
 
@@ -2734,7 +3357,8 @@ function triggerBurst(
 
         playGrain(
           type,
-          position
+          position,
+          physics
         );
 
       },
@@ -2749,12 +3373,13 @@ function triggerBurst(
 function triggerEvent(
   type,
   position = null,
-  contactKey = null
+  contactKey = null,
+  physics = null
 ) {
 
   /* Drawing and any event without a physical contact key stay normal. */
   if (!contactKey) {
-    triggerBurst(type, position);
+    triggerBurst(type, position, physics);
     return;
   }
 
@@ -2766,7 +3391,8 @@ function triggerEvent(
       times: [],
       lastHit: now,
       holding: false,
-      type
+      type,
+      firstHit: now
     };
     contactStates.set(contactKey, state);
   }
@@ -2775,6 +3401,19 @@ function triggerEvent(
   state.type = type;
   state.times = state.times.filter(t => now - t <= CONTACT_WINDOW_MS);
   state.times.push(now);
+  const physical = Object.assign({}, physics || {}, {
+    contactAge: Math.max(0, (now - state.firstHit) / 1000)
+  });
+
+  if (performanceAudio.sources[type] === "tone") {
+    if (state.holding) stopContactHold(contactKey);
+    state.holding = false;
+    if (!state.lastToneHit || now - state.lastToneHit >= 90) {
+      triggerBurst(type, position, physical);
+      state.lastToneHit = now;
+    }
+    return;
+  }
 
   if (state.holding || isContactHolding(contactKey)) {
     state.holding = true;
@@ -2789,7 +3428,1107 @@ function triggerEvent(
     return;
   }
 
-  triggerBurst(type, position);
+  triggerBurst(type, position, physical);
+}
+
+/* =========================================================
+   CHORD OBJECT + SAMPLE RESONATOR
+========================================================= */
+
+const chordObjects = [];
+const chordContacts = new Map();
+const chordImpulseCache = new Map();
+const chordFmCache = new Map();
+let activeChordVoices = 0;
+const MAX_CHORD_VOICES = 8;
+let selectedChord = null;
+let nextChordId = 1;
+
+const chordEditorWindow = document.getElementById("chordEditor");
+const chordEditorHeader = document.getElementById("chordEditorHeader");
+document.body.appendChild(chordEditorWindow);
+
+chordEditorHeader.addEventListener("pointerdown", event => {
+  if (event.target.closest("button")) return;
+  event.preventDefault();
+  const rect = chordEditorWindow.getBoundingClientRect();
+  const offsetX = event.clientX - rect.left;
+  const offsetY = event.clientY - rect.top;
+  chordEditorHeader.setPointerCapture(event.pointerId);
+  const move = moveEvent => {
+    if (moveEvent.pointerId !== event.pointerId) return;
+    const width = chordEditorWindow.offsetWidth;
+    const height = chordEditorWindow.offsetHeight;
+    chordEditorWindow.style.left = Math.max(0, Math.min(window.innerWidth - width, moveEvent.clientX - offsetX)) + "px";
+    chordEditorWindow.style.top = Math.max(0, Math.min(window.innerHeight - Math.min(height, window.innerHeight), moveEvent.clientY - offsetY)) + "px";
+  };
+  const stop = stopEvent => {
+    if (stopEvent.pointerId !== event.pointerId) return;
+    chordEditorHeader.removeEventListener("pointermove", move);
+    chordEditorHeader.removeEventListener("pointerup", stop);
+    chordEditorHeader.removeEventListener("pointercancel", stop);
+  };
+  chordEditorHeader.addEventListener("pointermove", move);
+  chordEditorHeader.addEventListener("pointerup", stop);
+  chordEditorHeader.addEventListener("pointercancel", stop);
+});
+
+document.getElementById("closeChordEditor").addEventListener("click", () => {
+  chordEditorWindow.hidden = true;
+});
+
+const NOTE_CLASS = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const RANDOM_CHORD_PRESETS = [
+  "C", "Cm", "C7", "Cmaj7", "Cm7", "Cdim", "Caug", "Csus2", "Csus4", "Cm7b5",
+  "D", "Dm", "D7", "Dmaj7", "Dm7", "E♭", "E♭m", "E7", "Em7", "F", "Fm", "F7", "Fmaj7",
+  "F♯m", "G", "Gm", "G7", "Gmaj7", "Gm7", "A♭", "Am", "A7", "Amaj7", "Am7", "B♭", "B♭m", "B7", "Bm7",
+  "C7b9", "C7#9", "D7sus4", "G7b9", "A7sus4", "Bø7"
+];
+
+function isRecognizedChordSymbol(symbol) {
+  const normalized = String(symbol || "").trim().replace(/♭/g, "b").replace(/♯/g, "#").replace(/[△Δ]/g, "maj");
+  const match = normalized.match(/^([A-Ga-g])([#b]?)(.*)$/);
+  if (!match) return false;
+  let rest = match[3].replace(/[\s(),]/g, "");
+  if (!rest) return true;
+  let tokens = 0;
+  while (rest && tokens < 12) {
+    const token = rest.match(/^(maj|M|min|m|dim|aug|sus2|sus4|sus|ø|°|\+|add(?:2|4|6|9|11|13)|[#b](?:5|9|11|13)|6|7|9|11|13)/);
+    if (!token) return false;
+    rest = rest.slice(token[0].length);
+    tokens++;
+  }
+  return rest.length === 0;
+}
+
+function resolvedChordSymbol(chord) {
+  const text = String(chord.text || "").trim();
+  if (isRecognizedChordSymbol(text)) {
+    chord.randomSourceText = null;
+    chord.randomChord = null;
+    return text || "C";
+  }
+  if (chord.randomSourceText !== text || !chord.randomChord) {
+    chord.randomSourceText = text;
+    chord.randomChord = RANDOM_CHORD_PRESETS[Math.floor(Math.random() * RANDOM_CHORD_PRESETS.length)];
+  }
+  return chord.randomChord;
+}
+
+function updateResolvedChordDisplay(chord) {
+  if (!chord || chord !== selectedChord) return;
+  const resolved = resolvedChordSymbol(chord);
+  document.getElementById("resolvedChordValue").textContent =
+    resolved === String(chord.text || "").trim() ? resolved : "random → " + resolved;
+}
+
+function parseChordSymbol(symbol) {
+  const normalized = String(symbol || "C")
+    .trim()
+    .replace(/♭/g, "b")
+    .replace(/♯/g, "#")
+    .replace(/[△Δ]/g, "maj");
+  const match = normalized.match(/^([A-Ga-g])([#b]?)(.*)$/);
+  if (!match) return [0, 4, 7];
+
+  let root = NOTE_CLASS[match[1].toUpperCase()];
+  if (match[2] === "#") root += 1;
+  if (match[2] === "b") root -= 1;
+  root = (root + 12) % 12;
+
+  const rawQuality = match[3].replace(/[()]/g, "").replace(/,/g, "");
+  const quality = rawQuality.toLowerCase();
+  const explicitMajor = /^M(?:7|9)/.test(rawQuality) || /^(?:maj|major)/i.test(rawQuality);
+  const minor = !explicitMajor && /^(?:m(?!aj)|min|minor)/i.test(rawQuality);
+  const diminished = /dim|°/.test(quality);
+  const halfDiminished = /ø/.test(rawQuality);
+  const suspended2 = /sus2/.test(quality);
+  const suspended4 = /sus4|sus(?!2)/.test(quality);
+  const augmented = /aug|\+/.test(quality);
+  const third = suspended2 ? 2 : suspended4 ? 5 : (minor || diminished || halfDiminished) ? 3 : 4;
+  const fifth = (diminished || halfDiminished) ? 6 : augmented ? 8 : 7;
+  const intervals = [0, third, fifth];
+  if (quality.includes("b5")) intervals[2] = 6;
+  if (quality.includes("#5") || quality.includes("+")) intervals[2] = 8;
+  if (/^M7/.test(rawQuality) || /^(?:maj|major)7/i.test(rawQuality)) intervals.push(11);
+  else if (diminished && quality.includes("7")) intervals.push(9);
+  else if (quality.includes("7") || halfDiminished) intervals.push(10);
+  if (/(^|[^a-z])6/.test(quality) || quality.includes("add6")) intervals.push(9);
+  if (quality.includes("b9")) intervals.push(13);
+  if (quality.includes("#9")) intervals.push(15);
+  if ((quality.includes("9") && !quality.includes("b9") && !quality.includes("#9")) || quality.includes("add2")) intervals.push(14);
+  if (quality.includes("add4")) intervals.push(17);
+  if (quality.includes("11") || quality.includes("add11")) intervals.push(17);
+  if (quality.includes("#11")) intervals.push(18);
+  if (quality.includes("13") || quality.includes("add13")) intervals.push(21);
+  if (quality.includes("b13")) intervals.push(20);
+  return [...new Set(intervals.map(interval => root + interval))];
+}
+
+function resonanceFrequencies(symbol, octaveShift = 0, detuneCents = 0) {
+  const notes = parseChordSymbol(symbol);
+  const frequencies = [];
+  for (const note of notes) {
+    for (const octave of [3, 4]) {
+      const midi = 12 * (octave + 1 + octaveShift) + note;
+      frequencies.push(440 * Math.pow(2, (midi - 69) / 12) * Math.pow(2, detuneCents / 1200));
+    }
+  }
+  return frequencies.filter(f => f >= 80 && f <= 2600);
+}
+
+function getChordImpulse(symbol, resonance, timbre = 0.5, decay = 1, brightness = 0.5, spread = 0.35, octave = 0, detune = 0, glide = 0) {
+  const amount = Math.max(0, Math.min(1, resonance));
+  const tone = Math.max(0, Math.min(1, timbre));
+  const tail = Math.max(0.25, Math.min(4, decay));
+  const bright = Math.max(0, Math.min(1, brightness));
+  const width = Math.max(0, Math.min(1, spread));
+  const glideTime = Math.max(0, Math.min(2, glide));
+  /* ConvolverNode requires an impulse compatible with the active context
+     in some browsers. A mismatched rate can throw during collision and
+     stop the entire physics animation loop. */
+  const impulseRate = audioContext.sampleRate;
+  const key = `${String(symbol).trim()}:${Math.round(amount * 20)}:${Math.round(tone * 20)}:${Math.round(tail * 10)}:${Math.round(bright * 20)}:${Math.round(width * 20)}:${octave}:${detune}:${Math.round(glideTime * 100)}:${impulseRate}`;
+  if (chordImpulseCache.has(key)) return chordImpulseCache.get(key);
+
+  const frequencies = resonanceFrequencies(symbol, octave, detune);
+  const duration = Math.min(6, (0.72 + amount * 1.38) * tail);
+  const length = Math.ceil(duration * impulseRate);
+  const impulse = audioContext.createBuffer(2, length, impulseRate);
+  /* Timbre morph:
+     0.00 = short, dark and wooden
+     0.25 = muted piano
+     0.50 = neutral modal body
+     0.75 = hard and bright
+     1.00 = long bell / metal partials */
+  const decayRate = (6.2 - amount * 2.7 - tone * 2.0) / Math.sqrt(tail);
+
+  for (let channel = 0; channel < impulse.numberOfChannels; channel++) {
+    const data = impulse.getChannelData(channel);
+    for (let i = 0; i < length; i++) {
+      const t = i / impulseRate;
+      const envelope = Math.exp(-t * decayRate);
+      const phaseTime = glideTime > 0
+        ? (t < glideTime
+            ? 0.5 * t + 0.25 * t * t / glideTime
+            : t - 0.25 * glideTime)
+        : t;
+      let sample = 0;
+      for (let noteIndex = 0; noteIndex < frequencies.length; noteIndex++) {
+        const frequency = frequencies[noteIndex];
+        const octaveWeight = frequency < 300 ? 1.18 : 0.48 + bright * 0.52;
+        const stereoPhase = channel === 0 ? -width * noteIndex * 0.09 : width * noteIndex * 0.09;
+        const basePhase = 2 * Math.PI * frequency * phaseTime + stereoPhase;
+        sample += Math.sin(basePhase) * octaveWeight;
+        sample += Math.sin(basePhase * 2 + 0.11) * octaveWeight * (0.04 + tone * 0.36 + bright * 0.24);
+        sample += Math.sin(basePhase * 3 + 0.27) * octaveWeight * (tone * tone * 0.18 + bright * bright * 0.20);
+      }
+      data[i] = sample * envelope / Math.max(1, frequencies.length * 0.64);
+    }
+  }
+
+  chordImpulseCache.set(key, impulse);
+  if (chordImpulseCache.size > 8) {
+    chordImpulseCache.delete(chordImpulseCache.keys().next().value);
+  }
+  return impulse;
+}
+
+function getChordFmBuffer(chord) {
+  const symbol = resolvedChordSymbol(chord);
+  const rate = Math.min(24000, audioContext.sampleRate);
+  const duration = Math.min(5, Math.max(0.35, chord.decay * 1.45));
+  const key = `fm2:${symbol}:${chord.fmAlgorithm}:${Math.round(chord.fmRatio * 20)}:${Math.round(chord.fmIndex * 20)}:${Math.round(chord.fmFeedback * 20)}:${Math.round(chord.timbre * 20)}:${Math.round(chord.brightness * 20)}:${Math.round(chord.spread * 20)}:${chord.octave}:${chord.detune}:${Math.round(chord.glide * 100)}:${rate}`;
+  if (chordFmCache.has(key)) return chordFmCache.get(key);
+
+  /* One carrier per chord tone is enough; FM operators generate the upper
+     spectrum. Avoid duplicating every note one octave higher. */
+  const frequencies = resonanceFrequencies(symbol, chord.octave, chord.detune)
+    .filter((frequency, index) => index % 2 === 0 && frequency <= 1200);
+  const length = Math.ceil(duration * rate);
+  const buffer = audioContext.createBuffer(2, length, rate);
+  const index = chord.fmIndex * 12;
+  const feedback = chord.fmFeedback * 3.5;
+  const ratio = chord.fmRatio;
+  const attack = Math.max(0.001, chord.attack);
+
+  let peak = 0;
+  for (let channel = 0; channel < 2; channel++) {
+    const data = buffer.getChannelData(channel);
+    for (let i = 0; i < length; i++) {
+      const t = i / rate;
+      const attackEnvelope = Math.min(1, t / attack);
+      const decayEnvelope = Math.exp(-t * (1.3 + (1 - chord.resonance) * 2.8) / Math.max(0.3, chord.decay));
+      const glideTime = chord.glide;
+      const phaseTime = glideTime > 0
+        ? (t < glideTime ? 0.5 * t + 0.25 * t * t / glideTime : t - 0.25 * glideTime)
+        : t;
+      let value = 0;
+
+      for (let noteIndex = 0; noteIndex < frequencies.length; noteIndex++) {
+        const frequency = frequencies[noteIndex];
+        const stereo = (channel === 0 ? -1 : 1) * chord.spread * noteIndex * 0.035;
+        const phase = 2 * Math.PI * frequency * phaseTime + stereo;
+        const modEnvelope = index * Math.exp(-t * (0.7 + chord.timbre * 3.4));
+        const self = Math.sin(phase * ratio + Math.sin(phase * ratio) * feedback);
+        let tone;
+
+        if (chord.fmAlgorithm === "bell") {
+          const op6 = Math.sin(phase * (ratio * 3.51) + self * feedback);
+          const op5 = Math.sin(phase * (ratio * 2.01) + op6 * modEnvelope * 0.45);
+          const carrierA = Math.sin(phase + op5 * modEnvelope);
+          const carrierB = Math.sin(phase * 1.006 + self * modEnvelope * 0.65);
+          tone = carrierA * 0.72 + carrierB * 0.38;
+        }
+        else if (chord.fmAlgorithm === "brass") {
+          const op6 = Math.sin(phase * ratio + self * feedback * 0.25);
+          const op5 = Math.sin(phase * 2 + op6 * modEnvelope * 0.28);
+          const op4 = Math.sin(phase + op5 * modEnvelope * 0.42);
+          tone = Math.sin(phase + op4 * modEnvelope * 0.75) + Math.sin(phase * 2) * 0.16;
+        }
+        else if (chord.fmAlgorithm === "digital") {
+          const op6 = Math.sin(phase * (ratio + 0.37) + self * feedback);
+          const op5 = Math.sin(phase * (ratio * 2.73) + op6 * modEnvelope);
+          tone = Math.sin(phase + op5 * modEnvelope) * 0.72 + Math.sin(phase * 1.5 + self * modEnvelope * 0.7) * 0.42;
+        }
+        else {
+          const op6 = Math.sin(phase * (ratio * 7) + self * feedback * 0.35);
+          const op5 = Math.sin(phase * (ratio * 3) + op6 * modEnvelope * 0.24);
+          const op4 = Math.sin(phase * ratio + op5 * modEnvelope * 0.34);
+          const op3 = Math.sin(phase * 2 + op4 * modEnvelope * 0.46);
+          const op2 = Math.sin(phase * ratio + op3 * modEnvelope * 0.58);
+          tone = Math.sin(phase + op2 * modEnvelope * 0.82);
+        }
+        value += tone;
+      }
+
+      const normalized = value / Math.max(1, frequencies.length * 0.72);
+      data[i] = normalized * (0.48 + chord.brightness * 0.24) * attackEnvelope * decayEnvelope;
+      peak = Math.max(peak, Math.abs(data[i]));
+    }
+  }
+
+  /* Normalize level without changing the waveform. Saturation belongs
+     exclusively to the DRIVE control. */
+  if (peak > 0.82) {
+    const scale = 0.82 / peak;
+    for (let channel = 0; channel < 2; channel++) {
+      const data = buffer.getChannelData(channel);
+      for (let i = 0; i < data.length; i++) data[i] *= scale;
+    }
+  }
+
+  chordFmCache.set(key, buffer);
+  if (chordFmCache.size > 8) chordFmCache.delete(chordFmCache.keys().next().value);
+  return buffer;
+}
+
+function updateChordEngineControls(engine) {
+  document.getElementById("fmControls").hidden = engine !== "fm";
+  document.getElementById("physicalControls").hidden = true;
+  document.getElementById("oscillatorControls").hidden = engine !== "oscillator";
+}
+
+function triggerChordTonalEngine(chord, master, sampleSource, now, start, size, impactAmount, resonance) {
+  const output = audioContext.createGain();
+  const filter = audioContext.createBiquadFilter();
+  const limiter = audioContext.createDynamicsCompressor();
+  const duration = Math.min(5, Math.max(0.3, chord.decay * (0.72 + resonance * 1.15)));
+  const frequencies = resonanceFrequencies(resolvedChordSymbol(chord), chord.octave, chord.detune)
+    .filter((frequency, index) => index % 2 === 0 && frequency <= 1400);
+  const oscillators = [];
+  const gains = [];
+  const physicalProfiles = {
+    string: { wave: "triangle", partials: [[1, 1], [2.003, 0.22]], decay: 1.0, cutoff: 0.72 },
+    wood:   { wave: "sine", partials: [[1, 1], [2.16, 0.24], [3.37, 0.10]], decay: 0.48, cutoff: 0.42 },
+    metal:  { wave: "sine", partials: [[1, 1], [2.71, 0.36], [4.18, 0.20]], decay: 1.28, cutoff: 0.92 },
+    glass:  { wave: "sine", partials: [[1, 1], [2.01, 0.30], [3.99, 0.16]], decay: 1.52, cutoff: 0.82 }
+  };
+  const profile = physicalProfiles[chord.physicalMaterial] || physicalProfiles.string;
+  const isPhysical = chord.engine === "physical";
+  const isSubtractive = chord.engine === "subtractive";
+  const partials = isPhysical ? profile.partials : [[1, 1]];
+  const engineDuration = Math.max(chord.attack + 0.04, duration * (isPhysical ? profile.decay : 1));
+  const level = (0.10 + resonance * 0.34) * chord.volume * (0.74 + impactAmount * 0.26);
+
+  output.gain.setValueAtTime(0.0001, now);
+  output.gain.linearRampToValueAtTime(level, now + Math.max(0.002, chord.attack));
+  output.gain.exponentialRampToValueAtTime(0.0001, now + engineDuration);
+  filter.type = "lowpass";
+  const materialCutoff = isPhysical ? profile.cutoff : 1;
+  filter.frequency.value = isSubtractive
+    ? 240 + Math.pow(chord.brightness, 1.7) * 10500 * (0.55 + chord.timbre * 0.45)
+    : 500 + chord.brightness * 15000 * materialCutoff * (0.55 + chord.timbre * 0.45);
+  filter.Q.value = isSubtractive ? 0.7 + resonance * 11 : 0.4;
+  limiter.threshold.value = -1;
+  limiter.ratio.value = 5;
+  limiter.attack.value = 0.003;
+  limiter.release.value = 0.12;
+  output.connect(filter);
+  filter.connect(limiter);
+  limiter.connect(master);
+
+  for (const frequency of frequencies) {
+    for (const [ratio, weight] of partials) {
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      oscillator.type = isPhysical ? profile.wave : (isSubtractive && chord.oscWave === "sine" ? "sawtooth" : chord.oscWave);
+      oscillator.frequency.setValueAtTime(Math.max(20, frequency * ratio * 0.5), now);
+      if (chord.glide > 0) {
+        oscillator.frequency.exponentialRampToValueAtTime(frequency * ratio, now + chord.glide);
+      }
+      else {
+        oscillator.frequency.setValueAtTime(frequency * ratio, now);
+      }
+      gain.gain.value = weight / Math.max(1, frequencies.length * 0.62);
+      oscillator.connect(gain);
+      gain.connect(output);
+      oscillator.start(now);
+      oscillator.stop(now + engineDuration + 0.03);
+      oscillators.push(oscillator);
+      gains.push(gain);
+    }
+  }
+
+  master.connect(audioContext.destination);
+  if (recordingDestination) master.connect(recordingDestination);
+  if (sampleSource) {
+    sampleSource.start(now, start, size);
+    sampleSource.stop(now + size + 0.02);
+  }
+
+  let cleaned = false;
+  const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
+    activeChordVoices = Math.max(0, activeChordVoices - 1);
+    for (const node of [...oscillators, ...gains, output, filter, limiter, master]) {
+      try { node.disconnect(); } catch (_) {}
+    }
+  };
+  const lastOscillator = oscillators[oscillators.length - 1];
+  if (lastOscillator) lastOscillator.addEventListener("ended", cleanup, { once: true });
+  setTimeout(cleanup, Math.ceil((engineDuration + 0.5) * 1000));
+}
+
+function triggerChordGranularEngine(chord, master, sampleSource, now, start, size, impactAmount, resonance) {
+  const buffer = audioFiles.chord;
+  if (!buffer) {
+    /* The built-in sample is normally ready, but an immediate first hit can
+       arrive while it is still being decoded. Fall back to a sine chord. */
+    triggerChordTonalEngine(chord, master, sampleSource, now, start, size, impactAmount, resonance);
+    return;
+  }
+  const output = audioContext.createGain();
+  const limiter = audioContext.createDynamicsCompressor();
+  const frequencies = resonanceFrequencies(resolvedChordSymbol(chord), chord.octave, chord.detune)
+    .filter((frequency, index) => index % 2 === 0 && frequency <= 1400);
+  const rootFrequency = frequencies[0] || 130.81;
+  const grainSize = Math.min(0.28, Math.max(0.035, size * 0.22));
+  const sources = [];
+  const nodes = [output, limiter];
+  output.gain.value = (0.22 + resonance * 0.52) * chord.volume * (0.72 + impactAmount * 0.28);
+  limiter.threshold.value = -1;
+  limiter.ratio.value = 6;
+  output.connect(limiter);
+  limiter.connect(master);
+
+  for (let noteIndex = 0; noteIndex < frequencies.length; noteIndex++) {
+    const frequency = frequencies[noteIndex];
+    for (let grainIndex = 0; grainIndex < 3; grainIndex++) {
+      const source = audioContext.createBufferSource();
+      const envelope = audioContext.createGain();
+      const toneFilter = audioContext.createBiquadFilter();
+      const when = now + grainIndex * (0.045 + chord.spread * 0.04);
+      const randomRange = Math.max(0, buffer.duration - grainSize);
+      const offset = Math.max(0, Math.min(randomRange, start + (Math.random() - 0.5) * chord.spread * randomRange * 0.22));
+      source.buffer = buffer;
+      source.playbackRate.value = Math.max(0.35, Math.min(4, frequency / rootFrequency));
+      envelope.gain.setValueAtTime(0.0001, when);
+      envelope.gain.linearRampToValueAtTime(1 / Math.max(2, frequencies.length * 0.9), when + 0.008);
+      envelope.gain.exponentialRampToValueAtTime(0.0001, when + grainSize);
+      /* Keep the grain's body audible. The former narrow band-pass could
+         remove almost the entire spectrum of drums and filtered samples. */
+      toneFilter.type = "lowpass";
+      toneFilter.frequency.value = 1200 + chord.brightness * 14500;
+      toneFilter.Q.value = 0.5 + resonance * 1.5;
+      source.connect(envelope);
+      envelope.connect(toneFilter);
+      toneFilter.connect(output);
+      source.start(when, offset, Math.min(grainSize, buffer.duration - offset));
+      source.stop(when + grainSize + 0.02);
+      sources.push(source);
+      nodes.push(envelope, toneFilter);
+    }
+  }
+
+  master.connect(audioContext.destination);
+  if (recordingDestination) master.connect(recordingDestination);
+  if (sampleSource) {
+    sampleSource.start(now, start, size);
+    sampleSource.stop(now + size + 0.02);
+  }
+  let cleaned = false;
+  const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
+    activeChordVoices = Math.max(0, activeChordVoices - 1);
+    for (const node of [...sources, ...nodes, master]) {
+      try { node.disconnect(); } catch (_) {}
+    }
+  };
+  /* Playback-rate transposition makes the highest grain end first, so do
+     not use a source's ended event to tear down the whole granular voice. */
+  setTimeout(cleanup, Math.ceil((grainSize + 0.8) * 1000));
+}
+
+function triggerChordWaveguideEngine(chord, master, sampleSource, now, start, size, impactAmount, resonance) {
+  const output = audioContext.createGain();
+  const limiter = audioContext.createDynamicsCompressor();
+  const frequencies = resonanceFrequencies(resolvedChordSymbol(chord), chord.octave, chord.detune)
+    .filter((frequency, index) => index % 2 === 0 && frequency <= 1200);
+  const noiseLength = Math.ceil(audioContext.sampleRate * 0.025);
+  const noiseBuffer = audioContext.createBuffer(1, noiseLength, audioContext.sampleRate);
+  const noise = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < noise.length; i++) noise[i] = (Math.random() * 2 - 1) * (1 - i / noise.length);
+  const duration = Math.min(3.2, Math.max(0.35, chord.decay * (0.55 + resonance * 0.65)));
+  const nodes = [output, limiter];
+  const sources = [];
+  output.gain.value = (0.045 + resonance * 0.18) * chord.volume * (0.7 + impactAmount * 0.3);
+  limiter.threshold.value = -1;
+  limiter.ratio.value = 7;
+  output.connect(limiter);
+  limiter.connect(master);
+
+  for (const frequency of frequencies) {
+    const source = audioContext.createBufferSource();
+    const excitation = audioContext.createGain();
+    const delay = audioContext.createDelay(0.1);
+    const damping = audioContext.createBiquadFilter();
+    const dcBlock = audioContext.createBiquadFilter();
+    const feedback = audioContext.createGain();
+    source.buffer = noiseBuffer;
+    excitation.gain.value = 0.38 / Math.max(2, frequencies.length);
+    delay.delayTime.value = 1 / Math.max(40, frequency);
+    damping.type = "lowpass";
+    damping.frequency.value = 700 + chord.brightness * 9000;
+    dcBlock.type = "highpass";
+    dcBlock.frequency.value = 45;
+    feedback.gain.value = Math.min(0.91, 0.72 + Math.min(1, chord.decay / 4) * 0.12 + resonance * 0.035);
+    source.connect(excitation);
+    excitation.connect(delay);
+    delay.connect(damping);
+    damping.connect(dcBlock);
+    dcBlock.connect(output);
+    dcBlock.connect(feedback);
+    feedback.connect(delay);
+    source.start(now);
+    source.stop(now + 0.03);
+    sources.push(source);
+    nodes.push(excitation, delay, damping, dcBlock, feedback);
+  }
+
+  master.connect(audioContext.destination);
+  if (recordingDestination) master.connect(recordingDestination);
+  if (sampleSource) {
+    sampleSource.start(now, start, size);
+    sampleSource.stop(now + size + 0.02);
+  }
+  setTimeout(() => {
+    activeChordVoices = Math.max(0, activeChordVoices - 1);
+    for (const node of [...sources, ...nodes, master]) {
+      try { node.disconnect(); } catch (_) {}
+    }
+  }, Math.ceil((duration + 0.2) * 1000));
+}
+
+function triggerChordResonance(chord, impact = 1, contactAge = 0) {
+  if (!audioUnlocked || !audioContext) return;
+  if (activeChordVoices >= MAX_CHORD_VOICES) return;
+  activeChordVoices++;
+
+  const buffer = audioFiles.chord;
+  const p = eventParameters.chord;
+  const size = buffer
+    ? Math.min(buffer.duration, Math.max(0.04, parseFloat(p.size.value)))
+    : 0.11;
+  const center = parseFloat(p.position.value);
+  const spread = parseFloat(p.spread.value);
+  const start = buffer
+    ? Math.max(0, Math.min(1, center + (Math.random() - 0.5) * spread)) * Math.max(0, buffer.duration - size)
+    : 0;
+  const resonance = Math.max(0, Math.min(1, chord.resonance));
+  const voiceLifetime = size + (0.78 + resonance * 1.42) * chord.decay + 0.5;
+  const now = audioContext.currentTime;
+  const dry = audioContext.createGain();
+  const master = audioContext.createGain();
+  const impactAmount = Math.max(0, Math.min(1, impact / 12));
+  /* Chord perception is the priority. The original sample remains only as
+     a short, full-band attack that identifies the source material. */
+  const sampleVolume = Math.max(0, parseFloat(p.volume.value) / 100);
+  dry.gain.value = (1 - resonance) * 0.155 * chord.volume * sampleVolume;
+  master.gain.setValueAtTime(0.0001, now);
+  master.gain.linearRampToValueAtTime(1, now + Math.max(0.001, chord.attack));
+  master.gain.exponentialRampToValueAtTime(0.0001, now + size + (0.78 + resonance * 1.42) * chord.decay);
+  let sampleSource = null;
+  if (buffer) {
+    sampleSource = audioContext.createBufferSource();
+    sampleSource.buffer = buffer;
+    sampleSource.playbackRate.value = parseFloat(p.pitch.value);
+    sampleSource.connect(dry);
+    dry.connect(master);
+  }
+
+  if (chord.engine === "oscillator" || chord.engine === "subtractive") {
+    triggerChordTonalEngine(chord, master, sampleSource, now, start, size, impactAmount, resonance);
+    return;
+  }
+
+  if (chord.engine === "granular") {
+    triggerChordGranularEngine(chord, master, sampleSource, now, start, size, impactAmount, resonance);
+    return;
+  }
+
+  if (chord.engine === "waveguide") {
+    triggerChordWaveguideEngine(chord, master, sampleSource, now, start, size, impactAmount, resonance);
+    return;
+  }
+
+  if (chord.engine === "fm") {
+    const fmSource = audioContext.createBufferSource();
+    const fmGain = audioContext.createGain();
+    const fmDrive = audioContext.createGain();
+    const fmShaper = audioContext.createWaveShaper();
+    const fmFilter = audioContext.createBiquadFilter();
+    const fmLimiter = audioContext.createDynamicsCompressor();
+    const fmBuffer = getChordFmBuffer(chord);
+    const driveCurve = new Float32Array(256);
+    const driveAmount = 1 + chord.drive * 8;
+    for (let i = 0; i < driveCurve.length; i++) {
+      const x = i / (driveCurve.length - 1) * 2 - 1;
+      driveCurve[i] = chord.drive <= 0.0001 ? x : Math.tanh(x * driveAmount) / Math.tanh(driveAmount);
+    }
+    fmSource.buffer = fmBuffer;
+    /* FM has a much denser sustained waveform than the resonator impulse.
+       Keep it on the same perceived-level scale instead of letting it
+       dominate merely by switching engines. */
+    fmGain.gain.value = (0.07 + resonance * 0.33) * chord.volume * (0.72 + impactAmount * 0.28);
+    fmDrive.gain.value = 1 + chord.drive * 2.2;
+    fmShaper.curve = driveCurve;
+    fmShaper.oversample = "2x";
+    fmFilter.type = "lowpass";
+    fmFilter.frequency.value = 900 + chord.brightness * 14000;
+    fmLimiter.threshold.value = -1;
+    fmLimiter.ratio.value = 4;
+    fmLimiter.attack.value = 0.003;
+    fmLimiter.release.value = 0.14;
+    fmSource.connect(fmGain);
+    fmGain.connect(fmDrive);
+    if (chord.drive > 0.0001) {
+      fmDrive.connect(fmShaper);
+      fmShaper.connect(fmFilter);
+    }
+    else {
+      fmDrive.connect(fmFilter);
+    }
+    fmFilter.connect(fmLimiter);
+    fmLimiter.connect(master);
+    master.connect(audioContext.destination);
+    if (recordingDestination) master.connect(recordingDestination);
+    if (sampleSource) {
+      sampleSource.start(now, start, size);
+      sampleSource.stop(now + size + 0.02);
+    }
+    fmSource.start(now);
+    fmSource.stop(now + fmBuffer.duration);
+    let fmCleanedUp = false;
+    const cleanupFmVoice = () => {
+      if (fmCleanedUp) return;
+      fmCleanedUp = true;
+      activeChordVoices = Math.max(0, activeChordVoices - 1);
+      for (const node of [dry, master, fmSource, fmGain, fmDrive, fmShaper, fmFilter, fmLimiter]) {
+        try { node.disconnect(); } catch (_) {}
+      }
+    };
+    /* Release the polyphony slot when the generated FM buffer really ends.
+       The former longer generic lifetime caused intermittent silent hits. */
+    fmSource.addEventListener("ended", cleanupFmVoice, { once: true });
+    setTimeout(cleanupFmVoice, Math.ceil((fmBuffer.duration + 0.5) * 1000));
+    return;
+  }
+
+  /* Always add a very short broadband excitation to the resonator.
+     This guarantees that quiet, tonal, filtered or sparsely positioned
+     samples still reveal every requested chord tone. */
+  const excitationLength = Math.ceil(audioContext.sampleRate * 0.095);
+  const excitationBuffer = audioContext.createBuffer(1, excitationLength, audioContext.sampleRate);
+  const excitationData = excitationBuffer.getChannelData(0);
+  for (let i = 0; i < excitationLength; i++) {
+    const envelope = Math.exp(-i / (excitationLength * 0.105));
+    excitationData[i] = (Math.random() * 2 - 1) * envelope;
+  }
+  excitationData[0] = 1;
+  const exciter = audioContext.createBufferSource();
+  const exciterGain = audioContext.createGain();
+  exciter.buffer = excitationBuffer;
+  exciterGain.gain.value = 0.72 + impactAmount * 0.48;
+  exciter.connect(exciterGain);
+
+  /* A sampled collision excites a stable modal impulse response containing
+     the chord tones. This is convolution, not an oscillator chord, and it
+     cannot self-feedback at resonance = 1. */
+  const convolver = audioContext.createConvolver();
+  const wet = audioContext.createGain();
+  const sampleResonatorSend = audioContext.createGain();
+  const limiter = audioContext.createDynamicsCompressor();
+  convolver.normalize = true;
+  convolver.buffer = getChordImpulse(
+    resolvedChordSymbol(chord), resonance, chord.timbre, chord.decay, chord.brightness,
+    chord.spread, chord.octave, chord.detune, chord.glide
+  );
+  wet.gain.value = (0.72 + impactAmount * 0.42) * (0.04 + resonance * 1.42) * chord.volume;
+  limiter.threshold.value = -1;
+  limiter.knee.value = 5;
+  limiter.ratio.value = 8;
+  limiter.attack.value = 0.003;
+  limiter.release.value = 0.16;
+  /* Fixed HYBRID excitation: retain the sample identity and supplement it
+     with a short broadband impulse so every chord tone is excited. */
+  exciterGain.connect(convolver);
+  /* User samples can have far more level and low-frequency energy than the
+     built-in excitation. Attenuate only their resonator send; the dry sample
+     path above remains unchanged. */
+  sampleResonatorSend.gain.value = 0.18;
+  if (sampleSource) {
+    sampleSource.connect(sampleResonatorSend);
+    sampleResonatorSend.connect(convolver);
+  }
+
+  const chordDrive = audioContext.createGain();
+  const chordShaper = audioContext.createWaveShaper();
+  const driveCurve = new Float32Array(256);
+  const driveAmount = 1 + chord.drive * 8;
+  for (let i = 0; i < driveCurve.length; i++) {
+    const x = i / (driveCurve.length - 1) * 2 - 1;
+    driveCurve[i] = chord.drive <= 0.0001
+      ? x
+      : Math.tanh(x * driveAmount) / Math.tanh(driveAmount);
+  }
+  chordDrive.gain.value = 1 + chord.drive * 2.2;
+  chordShaper.curve = driveCurve;
+  chordShaper.oversample = "2x";
+  convolver.connect(wet);
+  wet.connect(chordDrive);
+  chordDrive.connect(chordShaper);
+  const chordFilter = audioContext.createBiquadFilter();
+  const resonatorMakeup = audioContext.createGain();
+  chordFilter.type = "lowpass";
+  chordFilter.frequency.value = 700 + chord.brightness * 14500;
+  resonatorMakeup.gain.value = 3.0;
+  chordShaper.connect(resonatorMakeup);
+  resonatorMakeup.connect(limiter);
+  limiter.connect(chordFilter);
+  chordFilter.connect(master);
+
+  /* Long contact becomes a darker, longer tail: a lightweight spectral
+     blur/freeze approximation without an FFT or visual feedback. */
+  if (contactAge > 0.2) {
+    const delay = audioContext.createDelay(0.2);
+    const blur = audioContext.createBiquadFilter();
+    const wet = audioContext.createGain();
+    delay.delayTime.value = 0.055;
+    blur.type = "lowpass";
+    blur.frequency.value = Math.max(900, 5000 - contactAge * 1400);
+    wet.gain.value = Math.min(0.32, contactAge * 0.10) * resonance;
+    exciterGain.connect(delay);
+    if (sampleSource) sampleResonatorSend.connect(delay);
+    delay.connect(blur);
+    blur.connect(wet);
+    wet.connect(master);
+  }
+
+  master.connect(audioContext.destination);
+  if (recordingDestination) master.connect(recordingDestination);
+  if (sampleSource) {
+    sampleSource.start(now, start, size);
+    sampleSource.stop(now + size + 0.02);
+  }
+  exciter.start(now);
+  exciter.stop(now + 0.11);
+  setTimeout(() => {
+    activeChordVoices = Math.max(0, activeChordVoices - 1);
+    for (const node of [dry, master, exciterGain, sampleResonatorSend, convolver, wet, limiter, chordDrive, chordShaper, chordFilter, resonatorMakeup]) {
+      try { node.disconnect(); } catch (_) {}
+    }
+  }, Math.ceil(voiceLifetime * 1000));
+}
+
+function selectChord(chord) {
+  selectedChord = chord;
+  for (const item of chordObjects) {
+    item.element.classList.toggle("selected", item === chord);
+  }
+  const editor = document.getElementById("chordEditor");
+  editor.hidden = !chord;
+  if (!chord) return;
+  document.getElementById("chordText").value = chord.text;
+  document.getElementById("chordSize").value = chord.size;
+  document.getElementById("chordResonance").value = Math.round(chord.resonance * 100);
+  document.getElementById("chordEngine").value = chord.engine;
+  document.getElementById("chordFmAlgorithm").value = chord.fmAlgorithm;
+  document.getElementById("chordFmRatio").value = chord.fmRatio;
+  document.getElementById("chordFmIndex").value = Math.round(chord.fmIndex * 100);
+  document.getElementById("chordFmFeedback").value = Math.round(chord.fmFeedback * 100);
+  document.getElementById("chordOscWave").value = chord.oscWave;
+  document.getElementById("chordPhysicalMaterial").value = chord.physicalMaterial;
+  updateChordEngineControls(chord.engine);
+  document.getElementById("chordTimbre").value = Math.round(chord.timbre * 100);
+  document.getElementById("chordVolume").value = Math.round(chord.volume * 100);
+  document.getElementById("chordDecay").value = Math.round(chord.decay * 100);
+  document.getElementById("chordBrightness").value = Math.round(chord.brightness * 100);
+  document.getElementById("chordSpread").value = Math.round(chord.spread * 100);
+  document.getElementById("chordAttack").value = Math.round(chord.attack * 1000);
+  document.getElementById("chordOctave").value = chord.octave;
+  document.getElementById("chordDetune").value = chord.detune;
+  document.getElementById("chordGlide").value = Math.round(chord.glide * 1000);
+  document.getElementById("chordDrive").value = Math.round(chord.drive * 100);
+  document.getElementById("chordSizeValue").textContent = String(chord.size);
+  document.getElementById("chordResonanceValue").textContent = Math.round(chord.resonance * 100) + "%";
+  document.getElementById("chordFmRatioValue").textContent = chord.fmRatio.toFixed(2);
+  document.getElementById("chordFmIndexValue").textContent = Math.round(chord.fmIndex * 100) + "%";
+  document.getElementById("chordFmFeedbackValue").textContent = Math.round(chord.fmFeedback * 100) + "%";
+  document.getElementById("chordTimbreValue").textContent = Math.round(chord.timbre * 100) + "%";
+  document.getElementById("chordVolumeValue").textContent = Math.round(chord.volume * 100) + "%";
+  document.getElementById("chordDecayValue").textContent = Math.round(chord.decay * 100) + "%";
+  document.getElementById("chordBrightnessValue").textContent = Math.round(chord.brightness * 100) + "%";
+  document.getElementById("chordSpreadValue").textContent = Math.round(chord.spread * 100) + "%";
+  document.getElementById("chordAttackValue").textContent = Math.round(chord.attack * 1000) + "ms";
+  document.getElementById("chordOctaveValue").textContent = (chord.octave > 0 ? "+" : "") + chord.octave;
+  document.getElementById("chordDetuneValue").textContent = (chord.detune > 0 ? "+" : "") + chord.detune + "ct";
+  document.getElementById("chordGlideValue").textContent = Math.round(chord.glide * 1000) + "ms";
+  document.getElementById("chordDriveValue").textContent = Math.round(chord.drive * 100) + "%";
+  updateResolvedChordDisplay(chord);
+}
+
+function updateChordElement(chord) {
+  chord.element.textContent = chord.text || "C";
+  chord.element.style.fontSize = chord.size + "px";
+  chord.element.style.left = chord.x + "px";
+  chord.element.style.top = chord.y + "px";
+}
+
+function createChordObject(text = "Cm7") {
+  const element = document.createElement("div");
+  element.className = "chordObject";
+  document.body.appendChild(element);
+  const chord = {
+    id: nextChordId++, element, text,
+    size: 112, resonance: 0.55, timbre: 0.5,
+    engine: "resonator", fmAlgorithm: "epiano",
+    fmRatio: 2, fmIndex: 0.28, fmFeedback: 0.12,
+    oscWave: "sine", physicalMaterial: "string",
+    volume: 1, decay: 1.4, brightness: 0.55, spread: 0.35,
+    attack: 0.012, octave: 0, detune: 0,
+    drive: 0, glide: 0,
+    x: Math.max(20, window.innerWidth * 0.5 - 90),
+    y: Math.max(45, window.innerHeight * 0.5 - 60)
+  };
+  chordObjects.push(chord);
+  updateChordElement(chord);
+
+  element.addEventListener("pointerdown", event => {
+    if (element.isContentEditable) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const dragChord = event.altKey ? duplicateChordObject(chord) : chord;
+    selectChord(dragChord);
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const originX = dragChord.x;
+    const originY = dragChord.y;
+    element.setPointerCapture(event.pointerId);
+    const move = moveEvent => {
+      if (moveEvent.pointerId !== event.pointerId) return;
+      const rect = dragChord.element.getBoundingClientRect();
+      dragChord.x = Math.max(0, Math.min(window.innerWidth - rect.width, originX + moveEvent.clientX - startX));
+      dragChord.y = Math.max(0, Math.min(window.innerHeight - rect.height, originY + moveEvent.clientY - startY));
+      updateChordElement(dragChord);
+    };
+    const stop = stopEvent => {
+      if (stopEvent.pointerId !== event.pointerId) return;
+      element.removeEventListener("pointermove", move);
+      element.removeEventListener("pointerup", stop);
+      element.removeEventListener("pointercancel", stop);
+    };
+    element.addEventListener("pointermove", move);
+    element.addEventListener("pointerup", stop);
+    element.addEventListener("pointercancel", stop);
+  });
+  element.addEventListener("dblclick", event => {
+    event.preventDefault();
+    event.stopPropagation();
+    selectChord(chord);
+    element.contentEditable = "true";
+    element.spellcheck = false;
+    element.focus();
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+  element.addEventListener("keydown", event => {
+    if (!element.isContentEditable) return;
+    if (event.key === "Enter") {
+      event.preventDefault();
+      element.blur();
+    }
+    else if (event.key === "Escape") {
+      event.preventDefault();
+      element.textContent = chord.text;
+      element.blur();
+    }
+  });
+  element.addEventListener("blur", () => {
+    if (!element.isContentEditable) return;
+    const nextText = element.textContent.trim() || chord.text || "C";
+    element.contentEditable = "false";
+    if (nextText !== chord.text) {
+      chord.text = nextText;
+      chord.randomSourceText = null;
+      chord.randomChord = null;
+    }
+    document.getElementById("chordText").value = chord.text;
+    updateChordElement(chord);
+    updateResolvedChordDisplay(chord);
+  });
+  selectChord(chord);
+  updateChordToolState();
+  return chord;
+}
+
+function duplicateChordObject(source) {
+  const duplicate = createChordObject(source.text);
+  const preservedKeys = [
+    "size", "resonance", "timbre", "engine", "fmAlgorithm", "fmRatio",
+    "fmIndex", "fmFeedback", "oscWave", "physicalMaterial", "volume", "decay", "brightness", "spread",
+    "attack", "octave", "detune", "drive", "glide", "randomSourceText",
+    "randomChord"
+  ];
+  for (const key of preservedKeys) duplicate[key] = source[key];
+  duplicate.x = source.x;
+  duplicate.y = source.y;
+  updateChordElement(duplicate);
+  selectChord(duplicate);
+  return duplicate;
+}
+
+function updateChordToolState() {
+  /* Chord objects are always directly draggable. Kept as a hook so the
+     existing tool-state update path remains compatible. */
+}
+
+document.getElementById("addChordButton").addEventListener("click", () => createChordObject());
+document.getElementById("removeChordButton").addEventListener("click", () => {
+  if (!selectedChord) return;
+  selectedChord.element.remove();
+  chordObjects.splice(chordObjects.indexOf(selectedChord), 1);
+  selectChord(null);
+});
+document.getElementById("chordText").addEventListener("input", event => {
+  if (!selectedChord) return;
+  if (selectedChord.text !== event.target.value) {
+    selectedChord.text = event.target.value;
+    selectedChord.randomSourceText = null;
+    selectedChord.randomChord = null;
+  }
+  updateChordElement(selectedChord);
+  updateResolvedChordDisplay(selectedChord);
+});
+document.getElementById("chordSize").addEventListener("input", event => {
+  if (!selectedChord) return;
+  selectedChord.size = parseInt(event.target.value, 10);
+  document.getElementById("chordSizeValue").textContent = event.target.value;
+  updateChordElement(selectedChord);
+});
+document.getElementById("chordResonance").addEventListener("input", event => {
+  if (!selectedChord) return;
+  selectedChord.resonance = parseFloat(event.target.value) / 100;
+  document.getElementById("chordResonanceValue").textContent = Math.round(selectedChord.resonance * 100) + "%";
+});
+document.getElementById("chordEngine").addEventListener("change", event => {
+  if (!selectedChord) return;
+  selectedChord.engine = event.target.value;
+  updateChordEngineControls(selectedChord.engine);
+});
+document.getElementById("chordOscWave").addEventListener("change", event => {
+  if (selectedChord) selectedChord.oscWave = event.target.value;
+});
+document.getElementById("chordPhysicalMaterial").addEventListener("change", event => {
+  if (selectedChord) selectedChord.physicalMaterial = event.target.value;
+});
+document.getElementById("chordFmAlgorithm").addEventListener("change", event => {
+  if (selectedChord) selectedChord.fmAlgorithm = event.target.value;
+});
+document.getElementById("chordFmRatio").addEventListener("input", event => {
+  if (!selectedChord) return;
+  selectedChord.fmRatio = parseFloat(event.target.value);
+  document.getElementById("chordFmRatioValue").textContent = selectedChord.fmRatio.toFixed(2);
+});
+for (const [id, property] of [["chordFmIndex", "fmIndex"], ["chordFmFeedback", "fmFeedback"]]) {
+  document.getElementById(id).addEventListener("input", event => {
+    if (!selectedChord) return;
+    selectedChord[property] = parseFloat(event.target.value) / 100;
+    document.getElementById(id + "Value").textContent = event.target.value + "%";
+  });
+}
+document.getElementById("chordTimbre").addEventListener("input", event => {
+  if (!selectedChord) return;
+  selectedChord.timbre = parseFloat(event.target.value) / 100;
+  document.getElementById("chordTimbreValue").textContent = Math.round(selectedChord.timbre * 100) + "%";
+});
+for (const [id, property] of [["chordVolume", "volume"], ["chordDecay", "decay"], ["chordBrightness", "brightness"], ["chordSpread", "spread"]]) {
+  document.getElementById(id).addEventListener("input", event => {
+    if (!selectedChord) return;
+    selectedChord[property] = parseFloat(event.target.value) / 100;
+    document.getElementById(id + "Value").textContent = event.target.value + "%";
+  });
+}
+
+document.getElementById("chordAttack").addEventListener("input", event => {
+  if (!selectedChord) return;
+  selectedChord.attack = parseFloat(event.target.value) / 1000;
+  document.getElementById("chordAttackValue").textContent = event.target.value + "ms";
+});
+document.getElementById("chordGlide").addEventListener("input", event => {
+  if (!selectedChord) return;
+  selectedChord.glide = parseFloat(event.target.value) / 1000;
+  document.getElementById("chordGlideValue").textContent = event.target.value + "ms";
+});
+for (const [id, property, suffix] of [["chordOctave", "octave", ""], ["chordDetune", "detune", "ct"]]) {
+  document.getElementById(id).addEventListener("input", event => {
+    if (!selectedChord) return;
+    selectedChord[property] = parseFloat(event.target.value);
+    document.getElementById(id + "Value").textContent = (selectedChord[property] > 0 ? "+" : "") + selectedChord[property] + suffix;
+  });
+}
+for (const [id, property] of [["chordDrive", "drive"]]) {
+  document.getElementById(id).addEventListener("input", event => {
+    if (!selectedChord) return;
+    selectedChord[property] = parseFloat(event.target.value) / 100;
+    document.getElementById(id + "Value").textContent = event.target.value + "%";
+  });
+}
+const builderIds = ["builderRoot", "builderQuality", "builderSeventh", "builderExtension", "builderAlteration", "builderAdd"];
+function rebuildChordFromBuilder() {
+  if (!selectedChord) return;
+  const root = document.getElementById("builderRoot").value;
+  const quality = document.getElementById("builderQuality").value;
+  let seventh = document.getElementById("builderSeventh").value;
+  const extension = document.getElementById("builderExtension").value;
+  const alteration = document.getElementById("builderAlteration").value;
+  const add = document.getElementById("builderAdd").value;
+  /* 9/11/13 imply a seventh; △7 stays explicit when chosen. */
+  if (!seventh && ["9", "11", "13"].includes(extension)) seventh = "7";
+  /* dim + major seventh and aug + altered fifth are contradictory here. */
+  if (quality === "dim" && seventh === "△7") seventh = "7";
+  const safeAlteration = (quality === "dim" && alteration === "♯5") ||
+    (quality === "aug" && ["♭5", "♯5"].includes(alteration)) ? "" : alteration;
+  const tail = [safeAlteration, add].filter(Boolean);
+  selectedChord.text = root + quality + seventh + extension + (tail.length ? `(${tail.join(",")})` : "");
+  selectedChord.randomSourceText = null;
+  selectedChord.randomChord = null;
+  document.getElementById("chordText").value = selectedChord.text;
+  document.getElementById("builderSeventh").value = seventh;
+  updateChordElement(selectedChord);
+  updateResolvedChordDisplay(selectedChord);
+}
+for (const id of builderIds) document.getElementById(id).addEventListener("change", rebuildChordFromBuilder);
+
+canvas.addEventListener("pointerdown", event => {
+  if (!event.target.closest || !event.target.closest(".chordObject")) {
+    selectChord(null);
+  }
+});
+
+function checkChordCollisions() {
+  const now = performance.now();
+  const touched = new Set();
+  const chordRects = chordObjects.map(chord => ({
+    chord,
+    rect: chord.element.getBoundingClientRect()
+  }));
+  for (const ball of balls) {
+    const screen = worldToScreen(ball.x, ball.y);
+    const radius = ball.size * spaceZoom * 0.5;
+    const cx = screen.x + radius;
+    const cy = screen.y + radius;
+    for (const entry of chordRects) {
+      const chord = entry.chord;
+      const rect = entry.rect;
+      const nearestX = Math.max(rect.left, Math.min(cx, rect.right));
+      const nearestY = Math.max(rect.top, Math.min(cy, rect.bottom));
+      const dx = cx - nearestX;
+      const dy = cy - nearestY;
+      if (dx * dx + dy * dy > radius * radius) continue;
+
+      const key = `chord:${contactObjectId(ball, "b")}:${chord.id}`;
+      touched.add(key);
+      let state = chordContacts.get(key);
+      if (!state) {
+        state = { firstHit: now, lastSound: 0 };
+        chordContacts.set(key, state);
+      }
+      const age = (now - state.firstHit) / 1000;
+      const speed = Math.hypot(ball.isDragging ? ball.dragVx : ball.vx, ball.isDragging ? ball.dragVy : ball.vy);
+      if (now - state.lastSound > (age > 0.65 ? 260 : 700)) {
+        try {
+          triggerChordResonance(chord, speed, age);
+        }
+        catch (error) {
+          activeChordVoices = Math.max(0, activeChordVoices - 1);
+          console.warn("chord resonance skipped", error);
+        }
+        state.lastSound = now;
+      }
+
+      let nx = dx;
+      let ny = dy;
+      if (Math.hypot(nx, ny) < 0.001) {
+        const distances = [cx - rect.left, rect.right - cx, cy - rect.top, rect.bottom - cy];
+        const min = Math.min(...distances);
+        if (min === distances[0]) { nx = -1; ny = 0; }
+        else if (min === distances[1]) { nx = 1; ny = 0; }
+        else if (min === distances[2]) { nx = 0; ny = -1; }
+        else { nx = 0; ny = 1; }
+      }
+      const length = Math.max(0.001, Math.hypot(nx, ny));
+      nx /= length;
+      ny /= length;
+      const normalVelocity = ball.vx * nx + ball.vy * ny;
+      if (!ball.frozen && !ball.isDragging && normalVelocity < 0) {
+        if (movementMode === "bounce") {
+          const jumpPower = getBounceJumpVelocity();
+          const tangentVx = ball.vx - normalVelocity * nx;
+          const tangentVy = ball.vy - normalVelocity * ny;
+          ball.vx = tangentVx + jumpPower * nx;
+          ball.vy = tangentVy + jumpPower * ny;
+        }
+        else {
+          ball.vx -= 1.92 * normalVelocity * nx;
+          ball.vy -= 1.92 * normalVelocity * ny;
+        }
+      }
+      const overlap = Math.max(0, radius - Math.hypot(dx, dy));
+      const worldPush = overlap / Math.max(0.01, spaceZoom);
+      ball.x += nx * worldPush;
+      ball.y += ny * worldPush;
+      clampBall(ball);
+    }
+  }
+  for (const key of chordContacts.keys()) {
+    if (!touched.has(key)) chordContacts.delete(key);
+  }
 }
 
 
@@ -3672,6 +5411,21 @@ canvas.addEventListener(
       e.pointerId
     );
 
+    /* STOP turns the canvas into a direct layout editor. Lines can be
+       picked up regardless of the currently selected performance tool. */
+    if (worldStopped) {
+      movingLine = findLineAt(e.clientX, e.clientY);
+      if (movingLine) {
+        drawing = true;
+        movingLineLastX = e.clientX;
+        movingLineLastY = e.clientY;
+        movingLineLastTime = performance.now();
+        movingLine.dragVx = 0;
+        movingLine.dragVy = 0;
+      }
+      return;
+    }
+
 
     /*
       ADD BALL — each ball is placed manually.
@@ -3724,10 +5478,7 @@ canvas.addEventListener(
       MOVE LINE
     */
 
-    if (
-      drawingTool ===
-      "grab"
-    ) {
+    if (drawingTool === "grab" || worldStopped) {
 
       movingLine =
         findLineAt(
@@ -3830,10 +5581,7 @@ canvas.addEventListener(
       MOVE LINE
     */
 
-    if (
-      drawingTool ===
-      "grab"
-    ) {
+    if (drawingTool === "grab" || worldStopped) {
 
       if (
         !movingLine
@@ -4249,6 +5997,10 @@ function setTool(
       false
     );
     ball.element.style.cursor = activeCursor;
+  }
+
+  if (typeof updateChordToolState === "function") {
+    updateChordToolState();
   }
 
   redrawLines();
@@ -4690,7 +6442,11 @@ function checkLineCollision(
           triggerEvent(
             "line",
             ball.x / world.width,
-            contactKey
+            contactKey,
+            {
+              impact: Math.abs(relativeVelocity),
+              angle: Math.max(-1, Math.min(1, (-ballVx * ny + ballVy * nx) / Math.max(0.001, Math.hypot(ballVx, ballVy))))
+            }
           );
 
           return;
@@ -4748,7 +6504,11 @@ function checkLineCollision(
             "line",
             ball.x /
             world.width,
-            contactKey
+            contactKey,
+            {
+              impact: Math.abs(relativeVelocity),
+              angle: Math.max(-1, Math.min(1, (-ballVx * ny + ballVy * nx) / Math.max(0.001, Math.hypot(ballVx, ballVy))))
+            }
           );
 
         }
@@ -4803,7 +6563,7 @@ function baseBallSize() {
 let worldStopped = false;
 
 let movementMode =
-  "straight";
+  "bounce";
 
 
 const straightModeButton =
@@ -5415,6 +7175,13 @@ function createBall(
       e.stopPropagation();
 
       initAudio();
+
+      /* While STOP is active every ball is directly draggable, without
+         changing or depending on the selected tool. */
+      if (worldStopped) {
+        beginBallDrag(e, [ball]);
+        return;
+      }
 
       if (drawingTool === "freeze") {
         ball.frozen = !ball.frozen;
@@ -6256,7 +8023,11 @@ function checkBallCollisions() {
         triggerEvent(
           "ball",
           ((a.x + b.x) / 2) / world.width,
-          ballContactKey
+          ballContactKey,
+          {
+            impact: Math.abs(relativeVelocity),
+            angle: Math.max(-1, Math.min(1, (-rvx * ny + rvy * nx) / Math.max(0.001, Math.hypot(rvx, rvy))))
+          }
         );
         continue;
       }
@@ -6322,7 +8093,11 @@ function checkBallCollisions() {
               2
             ) /
             world.width,
-            ballContactKey
+            ballContactKey,
+            {
+              impact: Math.abs(relativeVelocity),
+              angle: Math.max(-1, Math.min(1, (-rvx * ny + rvy * nx) / Math.max(0.001, Math.hypot(rvx, rvy))))
+            }
           );
 
 
@@ -6359,7 +8134,15 @@ function surfaceHit(
   triggerEvent(
     "surface",
     position,
-    contactKey
+    contactKey,
+    {
+      impact: (surfaceName === "left" || surfaceName === "right")
+        ? Math.abs(ball.vx)
+        : Math.abs(ball.vy),
+      angle: (surfaceName === "left" || surfaceName === "right")
+        ? Math.max(-1, Math.min(1, ball.vy / Math.max(0.001, Math.hypot(ball.vx, ball.vy))))
+        : Math.max(-1, Math.min(1, ball.vx / Math.max(0.001, Math.hypot(ball.vx, ball.vy))))
+    }
   );
 
   return contactKey;
@@ -6772,6 +8555,7 @@ function isForceUI(target) {
     target.closest &&
     (
       target.closest("#controls") ||
+      target.closest("#chordEditor") ||
       target.closest("#openMenu") ||
       target.closest("#confirmOverlay")
     )
@@ -7073,6 +8857,8 @@ function animate() {
 
   checkBallCollisions();
 
+  checkChordCollisions();
+
   for (const ball of balls) {
     capBallVelocity(ball);
   }
@@ -7103,43 +8889,46 @@ function animate() {
    STOP / START — one transport toggle
 ========================================================= */
 
-const stopBallsButton = document.getElementById("stopBallsButton");
+const layoutGrabTool = document.getElementById("layoutGrabTool");
 
-function updateStopStartButton() {
-  /* Running state shows STOP; stopped state shows START. */
-  stopBallsButton.textContent = worldStopped ? "start" : "stop";
-  stopBallsButton.classList.toggle("active", worldStopped);
+function updateGrabTransportButton() {
+  layoutGrabTool.classList.toggle("active", worldStopped);
+  layoutGrabTool.title = worldStopped ? "start" : "grab / stop";
+  layoutGrabTool.setAttribute("aria-label", worldStopped ? "start" : "grab and stop");
+  canvas.style.cursor = worldStopped ? "grab" : canvas.style.cursor;
+  for (const ball of balls) {
+    if (worldStopped) ball.element.style.cursor = "grab";
+  }
 }
 
-stopBallsButton.addEventListener(
-  "click",
-  () => {
-    worldStopped = !worldStopped;
+function toggleGrabTransport() {
+  worldStopped = !worldStopped;
 
-    for (const ball of balls) {
-      if (worldStopped) {
-        ball.preStopVx = ball.vx;
-        ball.preStopVy = ball.vy;
-        ball.vx = 0;
-        ball.vy = 0;
-        ball.dragVx = 0;
-        ball.dragVy = 0;
-        ball.stoppedByStop = true;
-      }
-      else {
-        ball.stoppedByStop = false;
-        if (!ball.frozen) {
-          ball.vx = Number.isFinite(ball.preStopVx) ? ball.preStopVx : 0;
-          ball.vy = Number.isFinite(ball.preStopVy) ? ball.preStopVy : 0;
-        }
+  for (const ball of balls) {
+    if (worldStopped) {
+      ball.preStopVx = ball.vx;
+      ball.preStopVy = ball.vy;
+      ball.vx = 0;
+      ball.vy = 0;
+      ball.dragVx = 0;
+      ball.dragVy = 0;
+      ball.stoppedByStop = true;
+    }
+    else {
+      ball.stoppedByStop = false;
+      if (!ball.frozen) {
+        ball.vx = Number.isFinite(ball.preStopVx) ? ball.preStopVx : 0;
+        ball.vy = Number.isFinite(ball.preStopVy) ? ball.preStopVy : 0;
       }
     }
-
-    updateStopStartButton();
   }
-);
 
-updateStopStartButton();
+  updateGrabTransportButton();
+  if (!worldStopped) setTool(drawingTool);
+}
+
+layoutGrabTool.addEventListener("click", toggleGrabTransport);
+updateGrabTransportButton();
 
 
 /* =========================================================
@@ -7381,19 +9170,22 @@ const randomizableControls = [
   "surfaceVolume",
   "surfaceSize",
   "surfaceDensity",
-  "surfaceSpeed",
+  "surfacePosition",
+  "surfaceSpread",
   "surfacePitch",
 
   "ballVolume",
   "ballSize",
   "ballDensity",
-  "ballSpeedAudio",
+  "ballPosition",
+  "ballSpread",
   "ballPitch",
 
   "lineVolume",
   "lineSize",
   "lineDensity",
-  "lineSpeed",
+  "linePosition",
+  "lineSpread",
   "linePitch",
 
 
@@ -8218,8 +10010,12 @@ setSpaceZoom(
 );
 
 setMovementMode(
-  "straight"
+  "bounce"
 );
+
+if (chordObjects.length === 0) {
+  createChordObject("Cm7");
+}
 
 animate();
 
